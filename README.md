@@ -19,14 +19,14 @@ cargo build --release
 
 ```bash
 # Keygen (prints sk-hex and pk-hex)
-./target/release/gxt keygen
+cargo run -- keygen
 
 # Identity (meta from stdin; empty stdin => null)
-echo '{"name":"Alice"}' | ./target/release/gxt id <sk-hex> > alice.token
+echo '{"name":"Alice"}' | cargo run -- id <sk-hex> > alice.token
 
 # Message (body from stdin; option parent id)
-echo '{"type":"trade.offer/1"}' | ./target/release/gxt msg <sk-hex> > msg.token
+echo '{"type":"trade.offer/1"}' | cargo run -- msg <sk-hex> > msg.token
 
 # Verify
-./target/release/gxt verify "$(cat msg.token)"
+cargo run -- verify "$(cat msg.token)"
 ```

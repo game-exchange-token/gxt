@@ -116,21 +116,27 @@ fn payload_to_json(p: &serde_cbor::Value) -> serde_json::Value {
         match v {
             Null => serde_json::Value::Null,
             Bool(b) => serde_json::Value::Bool(*b),
-            Integer(i) => serde_json::Value::Number((*i).into()),
+            Integer(i) => {
+                        if let Ok(ii64) = i64::try_from(*i) {
+                            serde_json::Value::Number(serde_json::Number::from(ii64))
+                        } else {
+                            serde_json::Value::String(i.to_string())
+                        }
+                    },
             Bytes(b) => serde_json::Value::String(format!("0x{}", hex::encode(b))),
             Float(_) => serde_json::Value::Null,
             Text(s) => serde_json::Value::String(s.clone()),
             Array(a) => serde_json::Value::Array(a.iter().map(conv).collect()),
             Map(m) => {
-                let mut o = serde_json::Map::new();
-                for (k, v) in m {
-                    let key = if let Text(s) = k { s.clone() } else { format!("{:?}", k) };
-                    o.insert(key, conv(v));
-                }
-                serde_json::Value::Object(o)
-            }
-            Tagged(_, x) => conv(x),
-            Simple(_) => serde_json::Value::Null,
+                        let mut o = serde_json::Map::new();
+                        for (k, v) in m {
+                            let key = if let Text(s) = k { s.clone() } else { format!("{:?}", k) };
+                            o.insert(key, conv(v));
+                        }
+                        serde_json::Value::Object(o)
+                    }
+            Tag(_, x) => conv(x),
+            _ => serde_json::Value::Null,
         }
     }
     if let Array(a) = p {
