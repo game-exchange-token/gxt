@@ -4,7 +4,7 @@ Minimal, signed, copy-pasteable tokens for game/mod exchanges.
 
 - Prefix: `gxt:`
 - Transport: Base58btc(Brotli(CBOR))
-- Structure: CBOR array `[v, pk, payload, id, sig]`
+- Structure: CBOR array `[v, vk, pk, payload, id, sig]`
 - `id = blake3(bytes0)`, `sig = Ed25519("GXT1" || bytes0)`
 
 See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
@@ -18,14 +18,11 @@ cargo build --release
 ## CLI
 
 ```bash
-# Keygen (prints sk-hex and pk-hex)
-cargo run -- keygen
+cargo run -- keygen -o alice.key
+cargo run -- keygen -o bob.key
 
-# Identity (meta from stdin; empty stdin => null)
-echo '{"name":"Alice"}' | cargo run -- id <sk-hex> > alice.token
-
-# Message (body from stdin; option parent id)
-echo '{"type":"trade.offer/1"}' | cargo run -- msg <sk-hex> > msg.token
+echo '{"name":"Alice"}' | cargo run -- id bob.key -o bob.id
+echo '{"hello":"world"}' | cargo run -- msg alice.key bob.id -o msg.gxt
 
 # Verify
 cargo run -- verify "$(cat msg.token)"

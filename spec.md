@@ -68,3 +68,36 @@ If all checks pass, the token is valid.
 - The protocol does not forbid floats in `meta`/`body`, but tools may avoid them for determinism. Prefer integers/strings/booleans.
 - `parent` is optional and advisory; mods can interpret it as a thread or dependency edge.
 - Tokens are immutable; any edit produces a new `id`.
+
+
+## Encryption (optional, authenticated)
+To ensure only the intended receiver can read the `body`, GXT supports an encrypted `msg` form.
+
+The `payload` map can contain:
+```
+["msg", {
+  "to":   <X25519 public key, 32 bytes>,
+  "from": <X25519 public key, 32 bytes>,
+  "enc":  { "alg":"xchacha20poly1305", "n24":<24-byte nonce>, "ct":<ciphertext bytes> },
+  "parent"?: <32-byte id>
+}]
+```
+
+- The sender uses their X25519 **secret** key and the receiver's X25519 **public** key to derive a shared secret.
+- A 32-byte AEAD key is derived via `BLAKE3.derive_key("GXT-ENC-XCHACHA20POLY1305", shared)`.  
+- The JSON/CBOR `body` is serialized to CBOR and encrypted with XChaCha20-Poly1305.
+- The outer token is still **signed with Ed25519** (authentic), so the receiver can verify the sender by the outer `pk`.
+
+Decryption requires the receiver's X25519 secret key. The receiver must verify the outer signature *before* decrypting.
+
+
+### Same-key signing & encryption
+GXT derives the X25519 encryption keypair **deterministically from the Ed25519 signing key**:
+```text
+esk, epk = DeriveX25519( ed25519_sk )
+esk = X25519( BLAKE3.derive_key("GXT-ENC-X25519-FROM-ED25519", ed25519_sk_bytes) )
+epk = esk * G   # X25519 scalar basepoint multiplication
+```
+This lets users manage a **single secret**. To allow others to encrypt to you, publish `epk`
+(e.g., include it in your identity `meta`). The sender includes both `from` (their `epk`) and
+`to` (your `epk`) in the encrypted message payload.
