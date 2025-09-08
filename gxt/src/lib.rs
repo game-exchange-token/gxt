@@ -1,8 +1,9 @@
 #![forbid(unsafe_code)]
 
-use ed25519_dalek::{Signature, SigningKey, Verifier, VerifyingKey};
+use ed25519_dalek::{Signature, SigningKey, VerifyingKey, Signer};
 use serde_cbor::Value;
 use std::io::{Read, Write};
+use std::collections::BTreeMap;
 use thiserror::Error;
 
 pub const PREFIX: &str = "gxt:";
@@ -48,7 +49,7 @@ pub fn payload_id(meta: Value) -> Value {
 }
 
 pub fn payload_msg(parent: Option<Bytes32>, body: Value) -> Value {
-    let mut m = serde_cbor::value::Map::new();
+    let mut m: BTreeMap<serde_cbor::Value, serde_cbor::Value> = BTreeMap::new();
     if let Some(p) = parent {
         m.insert(Value::Text("parent".into()), Value::Bytes(p.to_vec()));
     }
@@ -225,7 +226,7 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
     }
 
     let vk = VerifyingKey::from_bytes(&pk).map_err(|_| GxtError::Invalid)?;
-    let sigv = Signature::from_bytes(&sig).map_err(|_| GxtError::Invalid)?;
+    let sigv = Signature::from_bytes(&sig);
     vk.verify_strict(&preimage(&b0), &sigv)
         .map_err(|_| GxtError::BadSig)?;
 
