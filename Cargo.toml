@@ -9,6 +9,7 @@ authors = ["hardliner66"]
 license = "MIT OR Apache-2.0"
 version = "0.10.0"
 repository = "https://github.com/hardliner66/gxt"
+documentation = "https://docs.rs/gxt/latest/gxt/"
 
 [workspace.dependencies]
 serde_json = "1"
