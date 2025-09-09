@@ -8,6 +8,7 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+getrandom = { version = "0.2.16", features = ["js"] }
 serde_json.workspace = true
 serde_cbor = "0.11"
 ed25519-dalek = { version = "2", features = ["rand_core"] }

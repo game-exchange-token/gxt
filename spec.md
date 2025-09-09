@@ -65,4 +65,4 @@ The `payload` of an encrypted message contains:
 - The JSON/CBOR `payload` is serialized to CBOR and encrypted with XChaCha20-Poly1305.
 - The outer token is still **signed with Ed25519** (authentic), so the receiver can verify the sender by the outer `vk`.
 
-Decryption requires the receiver's X25519 secret key. The receiver must verify the outer signature *before* decrypting.
+Decryption requires the receiver's X25519 secret key.

@@ -4,6 +4,8 @@ Minimal, signed, copy-pasteable tokens for game/mod exchanges.
 
 See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
 
+- [Rationale](#rationale)
+- [About](#about)
 - [Install](#install)
 - [Demo](#demo)
 - [CLI](#cli)
@@ -15,6 +17,35 @@ See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
   - [Verify](#verify)
   - [Decrypt-file](#decrypt-file)
   - [Verify-file](#verify-file)
+
+## Rationale
+I was thinking about how it could be possible to add trading
+between two players to a singleplayer game as part of a mod. Mostly out of curiosity to see
+if it was doable or too much work. At first I thought about having a server that manages
+the trades, but then I thought that not everybody can or wants to set up a server.
+
+Thats also when I had the idea to package the data into string tokens that can be sent
+via discord and started researching how to make this somewhat secure and
+easy to use and implement.
+
+With the current design, every message is signed and encrypted for a designated receiver.
+This prevents people from fulfilling a trade request and then sending the fulfillment to
+50 people who all collect the rewards. Its still not as secure as server side validation,
+but thats okay for me.
+
+While working on this, I also realized that there is potential for more than just trading,
+so I removed all the trade specific fields and the protocol now takes an opaque payload
+that can contain any valid json value. (Strings, Numbers, Maps, etc.)
+
+## About
+The protocol uses an Ed25519 key pair for signing messages and to derive a X25519 key pair
+from encryption.
+
+The size of the token before encoding is limited to 64KB.
+
+Because this is intended to be easy to integrate by mod authors, a library and cli are provided.
+Both are written in rust, but I plan on providing wrappers for other languages as well. The library
+can also compile to wasm, making it possible to use this in a web context.
 
 ## Install
 ```bash
