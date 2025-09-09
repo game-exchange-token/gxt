@@ -9,7 +9,7 @@ use std::{
 };
 
 #[derive(Parser)]
-#[command(name = "gxt", version, about = "GXT (CLI wrapping the gxt library)")]
+#[command(name = "gxt", version, about = "GXT (Game Exchange Token)")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -17,35 +17,75 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
+    /// Generates a new private key
     Keygen {
+        /// Where to store the key
         #[arg(short, long)]
-        out: Option<PathBuf>,
+        out: PathBuf,
     },
+
+    /// Generate an ID card that contains the public keys of the sender and some optional meta data
     Id {
+        /// The key of the person creating the id card
+        key: PathBuf,
+
+        /// Meta data for the id card. Can be anything, but must be set. Pass - to read from stdin
+        #[arg(short, long)]
+        meta: String,
+
+        /// Where to store the id card token
         #[arg(short, long)]
         out: Option<PathBuf>,
-        #[arg(short, long)]
-        meta: Option<String>,
-        key: PathBuf,
     },
 
     Msg {
+        /// The key of the sender
         #[arg(short, long)]
-        out: Option<PathBuf>,
+        key: PathBuf,
+
+        /// The id card of the recipient
+        #[arg(short, long)]
+        to: PathBuf,
+
+        /// The parent of this message
         #[arg(short, long)]
         parent: Option<String>,
+
+        /// The body of the message. Can be anything, but must be set. Pass - to read from stdin
         #[arg(short, long)]
-        body: Option<String>,
-        key: PathBuf,
-        id_card: PathBuf,
+        body: String,
+
+        /// Where to store the message token
+        #[arg(short, long)]
+        out: Option<PathBuf>,
     },
+
     Decrypt {
+        /// The key of the receiver
+        #[arg(short, long)]
         key: PathBuf,
-        msg: Option<PathBuf>,
+
+        /// The string token containing the encrypted message. Pass - to read from stdin
+        msg: String,
     },
 
     Verify {
-        msg: Option<PathBuf>,
+        /// The string token containing the message. Pass - to read from stdin
+        msg: String,
+    },
+
+    DecryptFile {
+        /// The key of the receiver
+        #[arg(short, long)]
+        key: PathBuf,
+
+        /// The path to the encrypted message
+        msg: PathBuf,
+    },
+
+    VerifyFile {
+        /// The path to the message
+        msg: PathBuf,
     },
 }
 
@@ -55,59 +95,50 @@ fn main() -> Result<()> {
     match cli.cmd {
         Cmd::Keygen { out } => {
             let token = gxt::make_key()?;
-            write_out_string(&token, out.as_deref())?;
+            write_out_string(&token, Some(out.as_ref()))?;
         }
         Cmd::Id { out, key, meta } => {
-            let sk_hex = std::fs::read_to_string(key)?;
-            let meta_json = read_payload_opt(&meta)?;
+            let sk_hex = fs::read_to_string(key)?;
+            let meta_json = value_or_stdin(&meta)?;
             let token = gxt::make_identity(&sk_hex, &meta_json)?;
             write_out_string(&token, out.as_deref())?;
         }
         Cmd::Msg {
             key,
-            id_card,
+            to,
             parent,
             body,
             out,
         } => {
             let sk = fs::read_to_string(key)?;
-            let id_card = fs::read_to_string(id_card)?;
-            let body = read_payload_opt(&body)?;
+            let id_card = fs::read_to_string(to)?;
+            let body = value_or_stdin(&body)?;
             let tok = gxt::make_encrypted_message(&sk, &id_card, &body, parent)?;
             write_out_string(&tok, out.as_deref())?;
         }
         Cmd::Decrypt { key, msg } => {
-            let token = read_all_opt(msg.as_ref())?;
-            let sk = std::fs::read_to_string(key)?;
-            match gxt::decrypt_message(&token, &sk) {
-                Ok(rec) => {
-                    println!("{}", rec);
-                }
-                Err(e) => {
-                    eprintln!("decrypt error: {e}");
-                    std::process::exit(1);
-                }
-            }
+            let token = value_or_stdin(&msg)?;
+            let sk = fs::read_to_string(key)?;
+            println!("{}", gxt::decrypt_message(&token, &sk)?);
         }
         Cmd::Verify { msg } => {
-            let token = read_all_opt(msg.as_ref())?;
-            match gxt::verify(&token) {
-                Ok(rec) => {
-                    println!("{rec}");
-                    std::process::exit(0);
-                }
-                Err(e) => {
-                    eprintln!("valid:false\nerror:{e}");
-                    std::process::exit(1);
-                }
-            }
+            let token = value_or_stdin(&msg)?;
+            println!("{}", gxt::verify(&token)?);
+        }
+        Cmd::DecryptFile { key, msg } => {
+            let token = fs::read_to_string(msg)?;
+            let sk = fs::read_to_string(key)?;
+            println!("{}", gxt::decrypt_message(&token, &sk)?);
+        }
+        Cmd::VerifyFile { msg } => {
+            let token = fs::read_to_string(msg)?;
+            println!("{}", gxt::verify(&token)?);
         }
     }
 
     Ok(())
 }
 
-/* ---------- tiny helpers ---------- */
 fn write_out_string(s: &str, path: Option<&Path>) -> Result<()> {
     write_out_bytes(s.as_bytes(), path)
 }
@@ -124,21 +155,12 @@ fn write_out_bytes(bytes: &[u8], path: Option<&Path>) -> Result<()> {
     Ok(())
 }
 
-fn read_all_opt(path: Option<&PathBuf>) -> Result<String> {
-    let mut s = String::new();
-    match path {
-        Some(p) => s = fs::read_to_string(p)?,
-        None => _ = io::stdin().read_to_string(&mut s)?,
-    }
-    Ok(s)
-}
-
-fn read_payload_opt(spec: &Option<String>) -> Result<String> {
-    if let Some(s) = spec {
-        Ok(s.to_string())
+fn value_or_stdin(payload: &str) -> Result<String> {
+    if payload == "-" {
+        let mut s = String::new();
+        io::stdin().read_to_string(&mut s)?;
+        Ok(s)
     } else {
-        let mut buf = String::new();
-        io::stdin().read_to_string(&mut buf)?;
-        Ok(buf)
+        Ok(payload.to_string())
     }
 }

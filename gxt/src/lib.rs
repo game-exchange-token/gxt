@@ -38,6 +38,8 @@ pub enum GxtError {
     BadHex(#[from] hex::FromHexError),
     #[error("payload required")]
     PayloadRequired,
+    #[error("meta data required")]
+    MetaRequired,
     #[error("invalid hex size. expected {expected} got {len}")]
     InvalidHexSize { expected: usize, len: usize },
     #[error("access denied")]
@@ -214,10 +216,7 @@ pub fn make_key() -> Result<String, GxtError> {
 
 pub fn make_identity(sk: &str, meta: &str) -> Result<String, GxtError> {
     let sk = parse_sk(sk.trim())?;
-    let meta = match parse_json_to_cbor(meta)? {
-        Some(meta) => meta,
-        None => serde_cbor::value::to_value(serde_json::Value::Null)?,
-    };
+    let meta = parse_json_to_cbor(meta.trim())?.ok_or(GxtError::PayloadRequired)?;
     make(&sk, PayloadKind::Id, &meta, None)
 }
 
@@ -283,7 +282,7 @@ fn parse_sk(h: &str) -> Result<SigningKey, GxtError> {
 }
 
 pub fn verify(token: &str) -> Result<Rec, GxtError> {
-    let raw = decode_token(token)?;
+    let raw = decode_token(token.trim())?;
     let val: Value = serde_cbor::from_slice(&raw)?;
     let a = match val {
         Value::Array(a) if a.len() == 8 => a,
@@ -381,14 +380,14 @@ pub fn make_encrypted_message(
     body: &str,
     parent: Option<String>,
 ) -> Result<String, GxtError> {
-    let id_card = verify(id_card)?;
+    let id_card = verify(id_card.trim())?;
     let pk = parse_hex::<32>(&id_card.pk)?;
     let parent = match parent {
         Some(h) => Some(parse_hex::<32>(&h)?),
         None => None,
     };
-    let sk = parse_sk(sk)?;
-    let body = parse_json_to_cbor(body)?.ok_or(GxtError::PayloadRequired)?;
+    let sk = parse_sk(sk.trim())?;
+    let body = parse_json_to_cbor(body.trim())?.ok_or(GxtError::PayloadRequired)?;
     let (my_esk, my_epk) = derive_enc_from_signing(&sk);
     let key = enc_derive_key_from_pairs(&my_esk, &pk);
     let cipher = XChaCha20Poly1305::new(&key);
@@ -416,14 +415,14 @@ pub fn make_encrypted_message(
 }
 
 pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
-    let mut rec = match verify(token) {
+    let mut rec = match verify(token.trim()) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("invalid token: {e}");
             std::process::exit(1);
         }
     };
-    let sk = SigningKey::from_bytes(&parse_hex::<32>(sk)?);
+    let sk = SigningKey::from_bytes(&parse_hex::<32>(sk.trim())?);
     let map = match &rec.payload {
         Value::Map(m) => m,
         _ => return Err(GxtError::Invalid),

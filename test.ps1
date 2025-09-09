@@ -25,16 +25,16 @@ cargo run -q -- keygen -o tmp/alice.key
 cargo run -q -- keygen -o tmp/bob.key
 
 Write-Host "make id"
-Write-Output '{"name":"Bob"}' | cargo run -q -- id tmp/bob.key -o tmp/bob.id
+cargo run -q -- id tmp/bob.key -o tmp/bob.id --meta '{"name":"Bob"}'
 
 Write-Host "verify id"
 cargo run -q -- verify tmp/bob.id
 
 Write-Host "make message"
-Write-Output '{"hello":"world"}' | cargo run -q -- msg tmp/alice.key tmp/bob.id -o tmp/msg_to_bob.gxt
+cargo run -q -- msg --key tmp/alice.key --to tmp/bob.id -o tmp/msg_to_bob.gxt --body '{"hello":"world"}'
 
 Write-Host "verify message"
 cargo run -q -- verify tmp/msg_to_bob.gxt
 
 Write-Host "decrypt message"
-cargo run -q -- decrypt tmp/bob.key tmp/msg_to_bob.gxt
+cargo run -q -- decrypt --key tmp/bob.key tmp/msg_to_bob.gxt
