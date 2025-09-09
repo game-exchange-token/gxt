@@ -12,7 +12,7 @@ documentation.workspace = true
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-gxt = { version = "0.12.0", path = "../gxt" }
+gxt = { version = "0.13.0", path = "../gxt" }
 serde_json.workspace = true
 
 [build-dependencies]
