@@ -118,7 +118,7 @@ fn main() -> Result<()> {
                 (None, Some(file)) => fs::read_to_string(file)?,
                 _ => anyhow::bail!("Nothing to verify"),
             };
-            let rec = gxt::verify(&token)?;
+            let rec = gxt::verify_message(&token)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&rec)?);
             } else {

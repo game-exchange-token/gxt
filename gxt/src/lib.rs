@@ -327,7 +327,7 @@ pub fn make_id_card(key: &str, meta: &str) -> Result<String, GxtError> {
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn verify(msg: &str) -> Result<Rec, GxtError> {
+pub fn verify_message(msg: &str) -> Result<Rec, GxtError> {
     let raw = decode_message(msg.trim())?;
     let val: Value = serde_cbor::from_slice(&raw)?;
     let a = match val {
@@ -405,7 +405,7 @@ pub fn encrypt_message(
     body: &str,
     parent: Option<String>,
 ) -> Result<String, GxtError> {
-    let id_card = verify(id_card.trim())?;
+    let id_card = verify_message(id_card.trim())?;
     let pk = parse_hex::<32>(&id_card.pk)?;
     let parent = match parent {
         Some(h) => Some(parse_hex::<32>(&h)?),
@@ -444,7 +444,7 @@ pub fn encrypt_message(
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
 pub fn decrypt_message(msg: &str, key: &str) -> Result<Rec, GxtError> {
-    let mut rec = match verify(msg.trim()) {
+    let mut rec = match verify_message(msg.trim()) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("invalid message: {e}");

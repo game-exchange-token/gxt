@@ -1,18 +1,25 @@
-// TODO: remove this and add docs
-#![allow(clippy::missing_safety_doc)]
-
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
 const E_RUST_TO_C_STRING: &str = "Could not convert rust string to C string";
 const E_C_TO_RUST_STRING: &str = "Could not convert C string to rust string";
 
+/// Creates a new key and returns it as hex string.
+///
+/// # Safety
+/// - Returned string must be freed with [`gxt_free_string`] after use.
+/// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub extern "C" fn gxt_make_key() -> *mut c_char {
     let cstr = CString::new(gxt::make_key()).expect(E_RUST_TO_C_STRING);
     cstr.into_raw()
 }
 
+/// Creates a new id card from a key and returns it as gxt message.
+///
+/// # Safety
+/// - Returned string must be freed with [`gxt_free_string`] after use.
+/// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_make_id_card(key: *const c_char, meta: *const c_char) -> *mut c_char {
     let key = unsafe { CStr::from_ptr(key) };
@@ -26,18 +33,28 @@ pub unsafe extern "C" fn gxt_make_id_card(key: *const c_char, meta: *const c_cha
     cstr.into_raw()
 }
 
+/// Verifies a message and returns the contents as JSON string on success.
+///
+/// # Safety
+/// - Returned string must be freed with [`gxt_free_string`] after use.
+/// - Currently panics on error.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn gxt_verify(msg: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn gxt_verify_message(msg: *const c_char) -> *mut c_char {
     let msg = unsafe { CStr::from_ptr(msg) };
-    let rec =
-        gxt::verify(msg.to_str().expect(E_C_TO_RUST_STRING)).expect("Failed to verify message");
+    let rec = gxt::verify_message(msg.to_str().expect(E_C_TO_RUST_STRING))
+        .expect("Failed to verify message");
     let cstr = CString::new(serde_json::to_string(&rec).expect("Could not serialize output"))
         .expect(E_RUST_TO_C_STRING);
     cstr.into_raw()
 }
 
+/// Encrypts the payload and returns the gxt message containing the encrypted data.
+///
+/// # Safety
+/// - Returned string must be freed with [`gxt_free_string`] after use.
+/// - Currently panics on error.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn gxt_encrypt(
+pub unsafe extern "C" fn gxt_encrypt_message(
     key: *const c_char,
     id_card: *const c_char,
     body: *const c_char,
@@ -56,8 +73,13 @@ pub unsafe extern "C" fn gxt_encrypt(
     cstr.into_raw()
 }
 
+/// Encrypts the payload and returns the gxt message containing the encrypted data and a parent reference.
+///
+/// # Safety
+/// - Returned string must be freed with [`gxt_free_string`] after use.
+/// - Currently panics on error.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn gxt_encrypt_with_parent(
+pub unsafe extern "C" fn gxt_encrypt_message_with_parent(
     key: *const c_char,
     id_card: *const c_char,
     body: *const c_char,
@@ -78,8 +100,16 @@ pub unsafe extern "C" fn gxt_encrypt_with_parent(
     cstr.into_raw()
 }
 
+/// Verifies and decrypts the payload inside a gxt message and returns it as a json string.
+///
+/// # Safety
+/// - Returned string must be freed with [`gxt_free_string`] after use.
+/// - Currently panics on error.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn gxt_decrypt(msg: *const c_char, key: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn gxt_decrypt_message(
+    msg: *const c_char,
+    key: *const c_char,
+) -> *mut c_char {
     let msg = unsafe { CStr::from_ptr(msg) };
     let key = unsafe { CStr::from_ptr(key) };
     let rec = gxt::decrypt_message(
@@ -92,6 +122,10 @@ pub unsafe extern "C" fn gxt_decrypt(msg: *const c_char, key: *const c_char) -> 
     cstr.into_raw()
 }
 
+/// This function must be used to free returned strings after they are used.
+///
+/// # Safety
+/// - Only pass strings that have been returned by rust into this function
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_free_string(s: *mut c_char) {
     if s.is_null() {
