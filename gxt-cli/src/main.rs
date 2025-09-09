@@ -103,7 +103,7 @@ fn main() -> Result<()> {
 
     match cli.cmd {
         Cmd::Keygen { out } => {
-            let token = gxt::make_key()?;
+            let token = gxt::make_key();
             write_out_string(&token, Some(out.as_ref()))?;
         }
         Cmd::Id { out, key, meta } => {
@@ -120,9 +120,9 @@ fn main() -> Result<()> {
             };
             let rec = gxt::verify(&token)?;
             if json {
-                println!("{}", serde_json::to_string_pretty(&rec)?)
+                println!("{}", serde_json::to_string_pretty(&rec)?);
             } else {
-                println!("{}", rec);
+                println!("{rec}");
             }
         }
         Cmd::Msg {
@@ -147,9 +147,9 @@ fn main() -> Result<()> {
             let sk = fs::read_to_string(key)?;
             let rec = gxt::decrypt_message(&token, &sk)?;
             if json {
-                println!("{}", serde_json::to_string_pretty(&rec)?)
+                println!("{}", serde_json::to_string_pretty(&rec)?);
             } else {
-                println!("{}", rec);
+                println!("{rec}");
             }
         }
     }

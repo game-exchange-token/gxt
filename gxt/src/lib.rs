@@ -19,6 +19,8 @@ type Bytes32 = [u8; 32];
 type Bytes64 = [u8; 64];
 
 #[derive(Error, Debug)]
+/// Errors that can occur while encoding, decoding, compressing,
+/// or verifying GXT tokens.
 pub enum GxtError {
     #[error("bad prefix")]
     BadPrefix,
@@ -82,14 +84,25 @@ impl fmt::Display for PayloadKind {
 }
 
 #[derive(Serialize, Clone, Debug)]
+/// Parsed, verified GXT record.
+///
+/// Represents a decoded token after signature verification and/or decryption.
 pub struct Rec {
+    /// Version
     pub v: u8,
+    /// Verification Key
     pub vk: String,
+    /// Public Key
     pub pk: String,
+    /// Payload Kind
     pub kind: PayloadKind,
+    /// Opaque Payload
     pub payload: Value,
+    /// Id of the Parent Message
     pub parent: Option<String>,
+    /// Id of this Message
     pub id: String,
+    /// Signature of this Message
     pub sig: String,
 }
 
@@ -213,11 +226,14 @@ fn make(
     encode_token(1, &vk, &pk, kind, payload, parent, &id, &sig)
 }
 
-pub fn make_key() -> Result<String, GxtError> {
+/// Creates a private key for a peer
+pub fn make_key() -> String {
     let sk = SigningKey::generate(&mut OsRng);
-    Ok(hex::encode(sk.to_bytes()))
+    hex::encode(sk.to_bytes())
 }
 
+/// Creates an ID card containing the necessary data for
+/// the encrypted communication and some opaque meta data
 pub fn make_identity(sk: &str, meta: &str) -> Result<String, GxtError> {
     let sk = parse_sk(sk.trim())?;
     let meta = parse_json_to_cbor(meta.trim())?.ok_or(GxtError::PayloadRequired)?;
@@ -285,6 +301,10 @@ fn parse_sk(h: &str) -> Result<SigningKey, GxtError> {
     Ok(SigningKey::from_bytes(&a))
 }
 
+/// Verify the signature of a message and return a parsed [`Rec`].
+///
+/// # Errors
+/// - returns a corresponding [`GxtError`], depending on what went wrong
 pub fn verify(token: &str) -> Result<Rec, GxtError> {
     let raw = decode_token(token.trim())?;
     let val: Value = serde_cbor::from_slice(&raw)?;
@@ -382,6 +402,11 @@ fn enc_derive_key_from_pairs(my_esk: &Bytes32, their_epk: &Bytes32) -> Key {
     Key::from_slice(&k).to_owned()
 }
 
+/// Create an **encrypted** message for the owner of the
+/// ID card that was passed in.
+///
+/// # Errors
+/// - returns a corresponding [`GxtError`], depending on what went wrong
 pub fn make_encrypted_message(
     sk: &str,
     id_card: &str,
@@ -422,6 +447,10 @@ pub fn make_encrypted_message(
     make(&sk, PayloadKind::Msg, &payload, parent)
 }
 
+/// Verify the signature of a message, decrypt its payload and return a parsed [`Rec`].
+///
+/// # Errors
+/// - returns a corresponding [`GxtError`], depending on what went wrong
 pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
     let mut rec = match verify(token.trim()) {
         Ok(r) => r,
