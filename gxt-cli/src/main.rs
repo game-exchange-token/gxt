@@ -54,6 +54,9 @@ enum Cmd {
     Verify {
         #[clap(flatten)]
         msg: MsgInput,
+
+        #[arg(short, long)]
+        json: bool,
     },
 
     /// Create an encrypted message
@@ -87,6 +90,9 @@ enum Cmd {
 
         #[clap(flatten)]
         msg: MsgInput,
+
+        #[arg(short, long)]
+        json: bool,
     },
 }
 
@@ -104,13 +110,18 @@ fn main() -> Result<()> {
             let token = gxt::make_identity(&sk_hex, &meta_json)?;
             write_out_string(&token, out.as_deref())?;
         }
-        Cmd::Verify { msg } => {
+        Cmd::Verify { msg, json } => {
             let token = match (msg.msg, msg.file) {
                 (Some(msg), None) => value_or_stdin(&msg)?,
                 (None, Some(file)) => fs::read_to_string(file)?,
                 _ => anyhow::bail!("Nothing to verify"),
             };
-            println!("{}", gxt::verify(&token)?);
+            let rec = gxt::verify(&token)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&rec)?)
+            } else {
+                println!("{}", rec);
+            }
         }
         Cmd::Msg {
             key,
@@ -125,14 +136,19 @@ fn main() -> Result<()> {
             let tok = gxt::make_encrypted_message(&sk, &id_card, &body, parent)?;
             write_out_string(&tok, out.as_deref())?;
         }
-        Cmd::Decrypt { key, msg } => {
+        Cmd::Decrypt { key, msg, json } => {
             let token = match (msg.msg, msg.file) {
                 (Some(msg), None) => value_or_stdin(&msg)?,
                 (None, Some(file)) => fs::read_to_string(file)?,
                 _ => anyhow::bail!("Nothing to verify"),
             };
             let sk = fs::read_to_string(key)?;
-            println!("{}", gxt::decrypt_message(&token, &sk)?);
+            let rec = gxt::decrypt_message(&token, &sk)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&rec)?)
+            } else {
+                println!("{}", rec);
+            }
         }
     }
 

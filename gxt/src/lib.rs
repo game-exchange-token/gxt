@@ -1,10 +1,14 @@
 #![forbid(unsafe_code)]
+#![allow(clippy::similar_names)]
 
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
+use serde::Serialize;
 use serde_cbor::Value;
-use std::fmt;
-use std::io::{Read, Write};
-use std::str::FromStr;
+use std::{
+    fmt,
+    io::{Read, Write},
+    str::FromStr,
+};
 use thiserror::Error;
 
 const PREFIX: &str = "gxt:";
@@ -50,7 +54,7 @@ pub enum GxtError {
     InvalidPayloadKind,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Serialize, Copy, Clone, Debug)]
 pub enum PayloadKind {
     Id,
     Msg,
@@ -77,7 +81,7 @@ impl fmt::Display for PayloadKind {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct Rec {
     pub v: u8,
     pub vk: String,
@@ -113,7 +117,7 @@ impl fmt::Display for Rec {
 }
 
 fn payload_to_json(p: &serde_cbor::Value) -> Result<serde_json::Value, GxtError> {
-    use serde_cbor::Value::*;
+    use serde_cbor::Value::{Array, Bool, Integer, Map, Tag, Text};
     fn conv(v: &serde_cbor::Value) -> Result<serde_json::Value, GxtError> {
         let result = match v {
             Bool(b) => serde_json::Value::Bool(*b),
@@ -134,7 +138,7 @@ fn payload_to_json(p: &serde_cbor::Value) -> Result<serde_json::Value, GxtError>
                     let key = if let Text(s) = k {
                         s.clone()
                     } else {
-                        format!("{:?}", k)
+                        format!("{k:?}")
                     };
                     o.insert(key, conv(v)?);
                 }
@@ -349,7 +353,11 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
 }
 
 fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{:02x}", x)).collect()
+    use std::fmt::Write;
+    b.iter().fold(String::new(), |mut output, b| {
+        let _ = write!(output, "{b:02x}");
+        output
+    })
 }
 
 use chacha20poly1305::aead::{Aead, KeyInit};
@@ -423,9 +431,8 @@ pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
         }
     };
     let sk = SigningKey::from_bytes(&parse_hex::<32>(sk.trim())?);
-    let map = match &rec.payload {
-        Value::Map(m) => m,
-        _ => return Err(GxtError::Invalid),
+    let Value::Map(map) = &rec.payload else {
+        return Err(GxtError::Invalid);
     };
     let to = match map.get(&Value::Text("to".into())) {
         Some(Value::Text(t)) => parse_hex::<32>(t)?,
@@ -435,9 +442,8 @@ pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
         Some(Value::Text(t)) => parse_hex::<32>(t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let encm = match map.get(&Value::Text("enc".into())) {
-        Some(Value::Map(m)) => m,
-        _ => return Err(GxtError::Invalid),
+    let Some(Value::Map(encm)) = map.get(&Value::Text("enc".into())) else {
+        return Err(GxtError::Invalid);
     };
     let n = match encm.get(&Value::Text("n24".into())) {
         Some(Value::Text(t)) => parse_hex::<24>(t)?,
