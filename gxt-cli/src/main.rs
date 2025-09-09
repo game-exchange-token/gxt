@@ -38,6 +38,7 @@ enum Cmd {
         out: Option<PathBuf>,
     },
 
+    /// Create an encrypted message for a receiver
     Msg {
         /// The key of the sender
         #[arg(short, long)]
@@ -60,6 +61,7 @@ enum Cmd {
         out: Option<PathBuf>,
     },
 
+    /// Decrypt a message passed as argument or read from stdin
     Decrypt {
         /// The key of the receiver
         #[arg(short, long)]
@@ -69,11 +71,13 @@ enum Cmd {
         msg: String,
     },
 
+    /// Verify a message passed as argument or read from stdin
     Verify {
         /// The string token containing the message. Pass - to read from stdin
         msg: String,
     },
 
+    /// Decrypt a message read from a file
     DecryptFile {
         /// The key of the receiver
         #[arg(short, long)]
@@ -83,6 +87,7 @@ enum Cmd {
         msg: PathBuf,
     },
 
+    /// Verify a message read from a file
     VerifyFile {
         /// The path to the message
         msg: PathBuf,
