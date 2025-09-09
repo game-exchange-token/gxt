@@ -1,2 +1,5 @@
 /target
 /tmp
+*.key
+*.id
+*.gxt

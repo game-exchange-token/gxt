@@ -1,18 +1,13 @@
 # Glossary
 
-- **GXT** — *Game Exchange Token.* The overall format + tools we defined for sharing signed game/mod messages as short strings.
+- **GXT** — *Game Exchange Token.* The overall format + tools for sharing signed and encrypted payloads as short strings.
 - **Token** — A string that starts with `gxt:` and contains Base58btc-encoded, Brotli-compressed CBOR bytes.
-- **CBOR** — *Concise Binary Object Representation.* A compact, binary JSON-like format.
-- **Base58btc** — A human-friendly base encoding that avoids visually ambiguous characters; used for copy/paste in chats.
-- **Brotli** — A compression algorithm used to reduce token size; we fix quality=5, lgwin=20.
-- **Ed25519** — A modern elliptic-curve signature scheme; used to sign tokens.
-- **blake3** — A fast cryptographic hash function; we use it to compute the token’s stable `id` from canonical bytes.
-- **bytes0** — The canonical CBOR encoding of the top-level array `[v, pk, payload, id, sig]` **with `id` and `sig` set to empty byte strings**. This is what we hash and sign.
+- **bytes0** — The canonical CBOR encoding of the top-level array `[v, vk, pk, kind, payload, id, sig]` **with `id` and `sig` set to empty byte strings**. This is what we hash and sign.
+- **`v`** — Protocol version (currently `1`). Stored *inside* the CBOR array; the outside prefix stays `gxt:`.
 - **`id`** — A 32-byte BLAKE3 hash of `bytes0`. Serves as a stable, content-addressed identifier for the token.
 - **`sig`** — A 64-byte Ed25519 signature over `b\"GXT1\" || bytes0` (domain-separated to avoid cross-protocol reuse).
 - **`vk`** — The senders verification key.
 - **`pk`** — The senders public key.
-- **`v`** — Protocol version (currently `1`). Stored *inside* the CBOR array; the outside prefix stays `gxt:`.
 - **`payload`** — A two-slot CBOR array of the form `["id", meta]` or `["msg", { parent?, body? }]`.
   - **`meta`** — Opaque CBOR/JSON value carried by an identity token.
   - **`parent`** — Optional 32-byte `id` of a previous token (threading or referencing).

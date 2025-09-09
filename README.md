@@ -18,9 +18,18 @@ cargo build --release
 ## CLI
 
 ```bash
-cargo run -- keygen -o alice.key
-cargo run -- keygen -o bob.key
+gxt keygen -o alice.key
+gxt keygen -o bob.key
 
-echo '{"name":"Bob"}' | cargo run -- id bob.key -o bob.id
-echo '{"hello":"world"}' | cargo run -- msg alice.key bob.id -o msg.gxt
+echo '{"name":"Bob"}' | gxt id bob.key -o bob.id
+
+echo '{"hello":"world"}' | gxt msg alice.key bob.id -o msg_to_bob.gxt
+
+gxt verify msg_to_bob.gxt
+
+gxt decrypt bob.key msg_to_bob.gxt
+
+gxt keygen -o charlie.key
+
+gxt decrypt charlie.key msg_to_bob.gxt
 ```

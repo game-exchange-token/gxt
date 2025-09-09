@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
-use serde::de::DeserializeOwned;
 use serde_cbor::Value;
 use std::fmt;
 use std::io::{Read, Write};
@@ -41,6 +40,8 @@ pub enum GxtError {
     PayloadRequired,
     #[error("invalid hex size. expected {expected} got {len}")]
     InvalidHexSize { expected: usize, len: usize },
+    #[error("access denied")]
+    AccessDenied,
     #[error("invalid record")]
     Invalid,
     #[error("invalid payload kind")]
@@ -81,6 +82,7 @@ pub struct Rec {
     pub pk: Bytes32,
     pub kind: PayloadKind,
     pub payload: Value,
+    pub parent: Bytes32,
     pub id: Bytes32,
     pub sig: Bytes64,
 }
@@ -90,13 +92,13 @@ impl fmt::Display for Rec {
         let id_hex = hex(&self.id);
         let vk_hex = hex(&self.vk);
         let pk_hex = hex(&self.pk);
-        writeln!(f, "valid   :true")?;
-        writeln!(f, "version :{}", self.v)?;
-        writeln!(f, "id      :{} ({})", id_hex, &id_hex[..8])?;
-        writeln!(f, "vk      :{} ({})", vk_hex, &vk_hex[..8])?;
-        writeln!(f, "pk      :{} ({})", pk_hex, &pk_hex[..8])?;
-        writeln!(f, "kind    :{}", self.kind)?;
-        writeln!(f, "payload:")?;
+        writeln!(f, "valid   : true")?;
+        writeln!(f, "version : {}", self.v)?;
+        writeln!(f, "id      : {} ({})", id_hex, &id_hex[..8])?;
+        writeln!(f, "vk      : {} ({})", vk_hex, &vk_hex[..8])?;
+        writeln!(f, "pk      : {} ({})", pk_hex, &pk_hex[..8])?;
+        writeln!(f, "kind    : {}", self.kind)?;
+        writeln!(f, "payload :")?;
         writeln!(
             f,
             "{}",
@@ -299,6 +301,10 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
         Some(payload) => payload.clone(),
         _ => return Err(GxtError::Invalid),
     };
+    let parent = match a.next() {
+        Some(Value::Text(t)) => parse_hex::<32>(&t)?,
+        _ => return Err(GxtError::Invalid),
+    };
     let id = match a.next() {
         Some(Value::Text(t)) => parse_hex::<32>(&t)?,
         _ => return Err(GxtError::Invalid),
@@ -323,6 +329,7 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
         v,
         vk: vk_bytes,
         pk,
+        parent,
         kind,
         payload,
         id,
@@ -399,11 +406,8 @@ pub fn make_encrypted_message(
     make(&sk, PayloadKind::Msg, &payload)
 }
 
-pub fn decrypt_message<T: DeserializeOwned>(
-    token: &str,
-    sk: &str,
-) -> Result<serde_json::Value, GxtError> {
-    let rec = match verify(token) {
+pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
+    let mut rec = match verify(token) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("invalid token: {e}");
@@ -438,7 +442,7 @@ pub fn decrypt_message<T: DeserializeOwned>(
 
     let (_my_esk, my_epk) = derive_enc_from_signing(&sk);
     if to != my_epk {
-        return Err(GxtError::Invalid);
+        return Err(GxtError::AccessDenied);
     }
 
     let (my_esk, _) = derive_enc_from_signing(&sk);
@@ -448,9 +452,9 @@ pub fn decrypt_message<T: DeserializeOwned>(
     let pt = cipher
         .decrypt(nonce, ct.as_ref())
         .map_err(|e| GxtError::Decompress(e.to_string()))?;
-    let val: Value = serde_cbor::from_slice(&pt)?;
+    rec.payload = serde_cbor::from_slice(&pt)?;
 
-    payload_to_json(&val)
+    Ok(rec)
 }
 
 fn parse_json_to_cbor(s: &str) -> Result<Option<Value>, GxtError> {

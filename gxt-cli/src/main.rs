@@ -79,9 +79,9 @@ fn main() -> Result<()> {
         Cmd::Decrypt { key, msg } => {
             let token = read_all_opt(msg.as_ref())?;
             let sk = std::fs::read_to_string(key)?;
-            match gxt::decrypt_message::<serde_json::Value>(&token, &sk) {
-                Ok(val) => {
-                    println!("{}", serde_json::to_string_pretty(&val)?);
+            match gxt::decrypt_message(&token, &sk) {
+                Ok(rec) => {
+                    println!("{}", rec);
                 }
                 Err(e) => {
                     eprintln!("decrypt error: {e}");
