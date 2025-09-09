@@ -264,7 +264,7 @@ impl fmt::Display for PayloadKind {
 /// Parsed, verified GXT record.
 ///
 /// Represents a decoded token after signature verification and/or decryption.
-pub struct Rec {
+pub struct Envelope {
     /// Version
     pub v: u8,
     /// Verification Key
@@ -283,7 +283,7 @@ pub struct Rec {
     pub sig: String,
 }
 
-impl fmt::Display for Rec {
+impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "valid   : true")?;
         writeln!(f, "version : {}", self.v)?;
@@ -327,7 +327,7 @@ pub fn make_id_card(key: &str, meta: &str) -> Result<String, GxtError> {
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn verify_message(msg: &str) -> Result<Rec, GxtError> {
+pub fn verify_message(msg: &str) -> Result<Envelope, GxtError> {
     let raw = decode_message(msg.trim())?;
     let val: Value = serde_cbor::from_slice(&raw)?;
     let a = match val {
@@ -382,7 +382,7 @@ pub fn verify_message(msg: &str) -> Result<Rec, GxtError> {
     vk.verify_strict(&preimage(&b0), &sigv)
         .map_err(|_| GxtError::BadSig)?;
 
-    Ok(Rec {
+    Ok(Envelope {
         v,
         vk: hex(&vk_bytes),
         pk: hex(&pk),
@@ -443,7 +443,7 @@ pub fn encrypt_message(
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn decrypt_message(msg: &str, key: &str) -> Result<Rec, GxtError> {
+pub fn decrypt_message(msg: &str, key: &str) -> Result<Envelope, GxtError> {
     let mut rec = match verify_message(msg.trim()) {
         Ok(r) => r,
         Err(e) => {
