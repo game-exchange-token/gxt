@@ -21,9 +21,6 @@ cargo build --release
 cargo run -- keygen -o alice.key
 cargo run -- keygen -o bob.key
 
-echo '{"name":"Alice"}' | cargo run -- id bob.key -o bob.id
+echo '{"name":"Bob"}' | cargo run -- id bob.key -o bob.id
 echo '{"hello":"world"}' | cargo run -- msg alice.key bob.id -o msg.gxt
-
-# Verify
-cargo run -- verify "$(cat msg.token)"
 ```

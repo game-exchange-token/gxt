@@ -439,6 +439,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_cbor",
+ "serde_json",
  "thiserror",
  "x25519-dalek",
 ]
@@ -449,11 +450,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "ed25519-dalek",
  "gxt",
- "hex",
- "rand",
- "serde_cbor",
  "serde_json",
 ]
 
