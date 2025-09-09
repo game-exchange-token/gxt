@@ -436,7 +436,7 @@ dependencies = [
 
 [[package]]
 name = "gxt"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "blake3",
  "brotli",
@@ -455,7 +455,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-cli"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "clap",
