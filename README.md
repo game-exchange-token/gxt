@@ -2,6 +2,8 @@
 
 Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games.
 
+For details check out [`spec.md`](https://github.com/hardliner66/gxt/blob/main/spec.md).
+
 - [Rationale](#rationale)
 - [About](#about)
 - [C API](#c-api)
