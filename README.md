@@ -123,11 +123,12 @@ Options:
 ```
 Verify a message
 
-Usage: gxt verify <--msg <MSG>|--file <FILE>>
+Usage: gxt.exe verify [OPTIONS] <--msg <MSG>|--file <FILE>>
 
 Options:
   -m, --msg <MSG>    The string token containing the message. Pass - to read from stdin
   -f, --file <FILE>  The path to the encrypted message
+  -j, --json         Print output as json
   -h, --help         Print help
 ```
 
@@ -150,11 +151,12 @@ Options:
 ```
 Decrypt a message
 
-Usage: gxt decrypt --key <KEY> <--msg <MSG>|--file <FILE>>
+Usage: gxt.exe decrypt [OPTIONS] --key <KEY> <--msg <MSG>|--file <FILE>>
 
 Options:
   -k, --key <KEY>    The key of the receiver
   -m, --msg <MSG>    The string token containing the message. Pass - to read from stdin
   -f, --file <FILE>  The path to the encrypted message
+  -j, --json         Print output as json
   -h, --help         Print help
 ```

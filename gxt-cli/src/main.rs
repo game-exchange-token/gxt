@@ -55,6 +55,7 @@ enum Cmd {
         #[clap(flatten)]
         msg: MsgInput,
 
+        /// Print output as json
         #[arg(short, long)]
         json: bool,
     },
@@ -91,6 +92,7 @@ enum Cmd {
         #[clap(flatten)]
         msg: MsgInput,
 
+        /// Print output as json
         #[arg(short, long)]
         json: bool,
     },
