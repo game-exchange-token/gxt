@@ -1,6 +1,6 @@
 # GXT (Game Exchange Token)
 
-Minimal, signed, copy-pasteable tokens for game/mod exchanges.
+Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games.
 
 See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
 
