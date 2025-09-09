@@ -129,103 +129,6 @@ impl fmt::Display for Rec {
     }
 }
 
-fn payload_to_json(p: &serde_cbor::Value) -> Result<serde_json::Value, GxtError> {
-    use serde_cbor::Value::{Array, Bool, Integer, Map, Tag, Text};
-    fn conv(v: &serde_cbor::Value) -> Result<serde_json::Value, GxtError> {
-        let result = match v {
-            Bool(b) => serde_json::Value::Bool(*b),
-            Integer(i) => {
-                if let Ok(ii64) = i64::try_from(*i) {
-                    serde_json::Value::Number(serde_json::Number::from(ii64))
-                } else {
-                    serde_json::Value::String(i.to_string())
-                }
-            }
-            Text(s) => serde_json::Value::String(s.clone()),
-            Array(a) => {
-                serde_json::Value::Array(a.iter().map(conv).collect::<Result<Vec<_>, _>>()?)
-            }
-            Map(m) => {
-                let mut o = serde_json::Map::new();
-                for (k, v) in m {
-                    let key = if let Text(s) = k {
-                        s.clone()
-                    } else {
-                        format!("{k:?}")
-                    };
-                    o.insert(key, conv(v)?);
-                }
-                serde_json::Value::Object(o)
-            }
-            Tag(_, x) => conv(x)?,
-            _ => serde_json::Value::Null,
-        };
-        Ok(result)
-    }
-    conv(p)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn cbor_array(
-    v: u8,
-    vk: &Bytes32,
-    pk: &Bytes32,
-    kind: PayloadKind,
-    payload: &Value,
-    parent: Option<Bytes32>,
-    id: Option<&Bytes32>,
-    sig: Option<&Bytes64>,
-) -> Result<Vec<u8>, GxtError> {
-    let arr = Value::Array(vec![
-        Value::Integer(v.into()),
-        Value::Text(hex(vk)),
-        Value::Text(hex(pk)),
-        Value::Text(kind.to_string()),
-        payload.clone(),
-        Value::Text(parent.map(|v| hex(&v)).unwrap_or_default()),
-        Value::Text(id.map(|v| hex(v)).unwrap_or_default()),
-        Value::Text(sig.map(|v| hex(v)).unwrap_or_default()),
-    ]);
-    Ok(serde_cbor::to_vec(&arr)?)
-}
-
-fn bytes0(
-    vk: &Bytes32,
-    pk: &Bytes32,
-    kind: PayloadKind,
-    payload: &Value,
-) -> Result<Vec<u8>, GxtError> {
-    cbor_array(1, vk, pk, kind, payload, None, None, None)
-}
-
-fn preimage(bytes0: &[u8]) -> Vec<u8> {
-    let mut v = Vec::with_capacity(SIG_DOMAIN.len() + bytes0.len());
-    v.extend_from_slice(SIG_DOMAIN);
-    v.extend_from_slice(bytes0);
-    v
-}
-
-fn make(
-    sk: &SigningKey,
-    kind: PayloadKind,
-    payload: &Value,
-    parent: Option<Bytes32>,
-) -> Result<String, GxtError> {
-    let vk = sk.verifying_key().to_bytes();
-    let (_, pk) = derive_enc_from_signing(sk);
-    let b0 = bytes0(&vk, &pk, kind, payload)?;
-    if b0.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
-
-    let mut id = [0u8; 32];
-    id.copy_from_slice(blake3::hash(&b0).as_bytes());
-    let mut sig = [0u8; 64];
-    sig.copy_from_slice(&sk.sign(&preimage(&b0)).to_bytes());
-
-    encode_token(1, &vk, &pk, kind, payload, parent, &id, &sig)
-}
-
 /// Creates a private key for a peer
 pub fn make_key() -> String {
     let sk = SigningKey::generate(&mut OsRng);
@@ -234,71 +137,13 @@ pub fn make_key() -> String {
 
 /// Creates an ID card containing the necessary data for
 /// the encrypted communication and some opaque meta data
+///
+/// # Errors
+/// - returns a corresponding [`GxtError`], depending on what went wrong
 pub fn make_identity(sk: &str, meta: &str) -> Result<String, GxtError> {
     let sk = parse_sk(sk.trim())?;
     let meta = parse_json_to_cbor(meta.trim())?.ok_or(GxtError::PayloadRequired)?;
     make(&sk, PayloadKind::Id, &meta, None)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn encode_token(
-    v: u8,
-    vk: &Bytes32,
-    pk: &Bytes32,
-    kind: PayloadKind,
-    payload: &Value,
-    parent: Option<Bytes32>,
-    id: &Bytes32,
-    sig: &Bytes64,
-) -> Result<String, GxtError> {
-    let cbor = cbor_array(v, vk, pk, kind, payload, parent, Some(id), Some(sig))?;
-    if cbor.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
-    let mut comp = Vec::new();
-    brotli::CompressorWriter::new(&mut comp, 4096, 5, 20)
-        .write_all(&cbor)
-        .map_err(|e| GxtError::Decompress(e.to_string()))?;
-    Ok(format!("{}{}", PREFIX, bs58::encode(comp).into_string()))
-}
-
-fn decode_token(token: &str) -> Result<Vec<u8>, GxtError> {
-    let rest = token.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
-    let comp = bs58::decode(rest)
-        .into_vec()
-        .map_err(|e| GxtError::Decode(e.to_string()))?;
-    let mut raw = Vec::new();
-    brotli::Decompressor::new(&comp[..], 4096)
-        .read_to_end(&mut raw)
-        .map_err(|e| GxtError::Decompress(e.to_string()))?;
-    if raw.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
-    Ok(raw)
-}
-
-fn parse_hex_unsized(h: &str) -> Result<Vec<u8>, GxtError> {
-    Ok(hex::decode(h)?)
-}
-
-fn parse_hex<const SIZE: usize>(h: &str) -> Result<[u8; SIZE], GxtError> {
-    let v = hex::decode(h)?;
-    if v.len() != SIZE {
-        return Err(GxtError::InvalidHexSize {
-            expected: SIZE,
-            len: v.len(),
-        });
-    }
-    let mut a = [0u8; SIZE];
-    a.copy_from_slice(&v);
-    Ok(a)
-}
-
-fn parse_sk(h: &str) -> Result<SigningKey, GxtError> {
-    let v = parse_hex::<32>(h)?;
-    let mut a = [0u8; 32];
-    a.copy_from_slice(&v);
-    Ok(SigningKey::from_bytes(&a))
 }
 
 /// Verify the signature of a message and return a parsed [`Rec`].
@@ -370,36 +215,6 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
         id: hex(&id),
         sig: hex(&sig),
     })
-}
-
-fn hex(b: &[u8]) -> String {
-    use std::fmt::Write;
-    b.iter().fold(String::new(), |mut output, b| {
-        let _ = write!(output, "{b:02x}");
-        output
-    })
-}
-
-use chacha20poly1305::aead::{Aead, KeyInit};
-use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
-use rand::RngCore;
-use rand::rngs::OsRng;
-use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
-
-fn derive_enc_from_signing(sk: &SigningKey) -> (Bytes32, Bytes32) {
-    let seed = sk.to_bytes();
-    let dk = blake3::derive_key("GXT-ENC-X25519-FROM-ED25519", &seed);
-    let esk = XSecret::from(dk);
-    let epk = XPublicKey::from(&esk);
-    (esk.to_bytes(), epk.to_bytes())
-}
-
-fn enc_derive_key_from_pairs(my_esk: &Bytes32, their_epk: &Bytes32) -> Key {
-    let sk = XSecret::from(*my_esk);
-    let vk = XPublicKey::from(*their_epk);
-    let shared = sk.diffie_hellman(&vk);
-    let k = blake3::derive_key("GXT-ENC-XCHACHA20POLY1305", shared.as_bytes());
-    Key::from_slice(&k).to_owned()
 }
 
 /// Create an **encrypted** message for the owner of the
@@ -498,6 +313,194 @@ pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
     rec.payload = serde_cbor::from_slice(&pt)?;
 
     Ok(rec)
+}
+
+fn payload_to_json(p: &serde_cbor::Value) -> Result<serde_json::Value, GxtError> {
+    use serde_cbor::Value::{Array, Bool, Integer, Map, Tag, Text};
+    fn conv(v: &serde_cbor::Value) -> Result<serde_json::Value, GxtError> {
+        let result = match v {
+            Bool(b) => serde_json::Value::Bool(*b),
+            Integer(i) => {
+                if let Ok(ii64) = i64::try_from(*i) {
+                    serde_json::Value::Number(serde_json::Number::from(ii64))
+                } else {
+                    serde_json::Value::String(i.to_string())
+                }
+            }
+            Text(s) => serde_json::Value::String(s.clone()),
+            Array(a) => {
+                serde_json::Value::Array(a.iter().map(conv).collect::<Result<Vec<_>, _>>()?)
+            }
+            Map(m) => {
+                let mut o = serde_json::Map::new();
+                for (k, v) in m {
+                    let key = if let Text(s) = k {
+                        s.clone()
+                    } else {
+                        format!("{k:?}")
+                    };
+                    o.insert(key, conv(v)?);
+                }
+                serde_json::Value::Object(o)
+            }
+            Tag(_, x) => conv(x)?,
+            _ => serde_json::Value::Null,
+        };
+        Ok(result)
+    }
+    conv(p)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn cbor_array(
+    v: u8,
+    vk: &Bytes32,
+    pk: &Bytes32,
+    kind: PayloadKind,
+    payload: &Value,
+    parent: Option<Bytes32>,
+    id: Option<&Bytes32>,
+    sig: Option<&Bytes64>,
+) -> Result<Vec<u8>, GxtError> {
+    let arr = Value::Array(vec![
+        Value::Integer(v.into()),
+        Value::Text(hex(vk)),
+        Value::Text(hex(pk)),
+        Value::Text(kind.to_string()),
+        payload.clone(),
+        Value::Text(parent.map(|v| hex(&v)).unwrap_or_default()),
+        Value::Text(id.map(|v| hex(v)).unwrap_or_default()),
+        Value::Text(sig.map(|v| hex(v)).unwrap_or_default()),
+    ]);
+    Ok(serde_cbor::to_vec(&arr)?)
+}
+
+fn bytes0(
+    vk: &Bytes32,
+    pk: &Bytes32,
+    kind: PayloadKind,
+    payload: &Value,
+) -> Result<Vec<u8>, GxtError> {
+    cbor_array(1, vk, pk, kind, payload, None, None, None)
+}
+
+fn preimage(bytes0: &[u8]) -> Vec<u8> {
+    let mut v = Vec::with_capacity(SIG_DOMAIN.len() + bytes0.len());
+    v.extend_from_slice(SIG_DOMAIN);
+    v.extend_from_slice(bytes0);
+    v
+}
+
+fn make(
+    sk: &SigningKey,
+    kind: PayloadKind,
+    payload: &Value,
+    parent: Option<Bytes32>,
+) -> Result<String, GxtError> {
+    let vk = sk.verifying_key().to_bytes();
+    let (_, pk) = derive_enc_from_signing(sk);
+    let b0 = bytes0(&vk, &pk, kind, payload)?;
+    if b0.len() > MAX_RAW {
+        return Err(GxtError::TooLarge);
+    }
+
+    let mut id = [0u8; 32];
+    id.copy_from_slice(blake3::hash(&b0).as_bytes());
+    let mut sig = [0u8; 64];
+    sig.copy_from_slice(&sk.sign(&preimage(&b0)).to_bytes());
+
+    encode_token(1, &vk, &pk, kind, payload, parent, &id, &sig)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn encode_token(
+    v: u8,
+    vk: &Bytes32,
+    pk: &Bytes32,
+    kind: PayloadKind,
+    payload: &Value,
+    parent: Option<Bytes32>,
+    id: &Bytes32,
+    sig: &Bytes64,
+) -> Result<String, GxtError> {
+    let cbor = cbor_array(v, vk, pk, kind, payload, parent, Some(id), Some(sig))?;
+    if cbor.len() > MAX_RAW {
+        return Err(GxtError::TooLarge);
+    }
+    let mut comp = Vec::new();
+    brotli::CompressorWriter::new(&mut comp, 4096, 5, 20)
+        .write_all(&cbor)
+        .map_err(|e| GxtError::Decompress(e.to_string()))?;
+    Ok(format!("{}{}", PREFIX, bs58::encode(comp).into_string()))
+}
+
+fn decode_token(token: &str) -> Result<Vec<u8>, GxtError> {
+    let rest = token.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
+    let comp = bs58::decode(rest)
+        .into_vec()
+        .map_err(|e| GxtError::Decode(e.to_string()))?;
+    let mut raw = Vec::new();
+    brotli::Decompressor::new(&comp[..], 4096)
+        .read_to_end(&mut raw)
+        .map_err(|e| GxtError::Decompress(e.to_string()))?;
+    if raw.len() > MAX_RAW {
+        return Err(GxtError::TooLarge);
+    }
+    Ok(raw)
+}
+
+fn parse_hex_unsized(h: &str) -> Result<Vec<u8>, GxtError> {
+    Ok(hex::decode(h)?)
+}
+
+fn parse_hex<const SIZE: usize>(h: &str) -> Result<[u8; SIZE], GxtError> {
+    let v = hex::decode(h)?;
+    if v.len() != SIZE {
+        return Err(GxtError::InvalidHexSize {
+            expected: SIZE,
+            len: v.len(),
+        });
+    }
+    let mut a = [0u8; SIZE];
+    a.copy_from_slice(&v);
+    Ok(a)
+}
+
+fn parse_sk(h: &str) -> Result<SigningKey, GxtError> {
+    let v = parse_hex::<32>(h)?;
+    let mut a = [0u8; 32];
+    a.copy_from_slice(&v);
+    Ok(SigningKey::from_bytes(&a))
+}
+
+fn hex(b: &[u8]) -> String {
+    use std::fmt::Write;
+    b.iter().fold(String::new(), |mut output, b| {
+        let _ = write!(output, "{b:02x}");
+        output
+    })
+}
+
+use chacha20poly1305::aead::{Aead, KeyInit};
+use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
+use rand::RngCore;
+use rand::rngs::OsRng;
+use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
+
+fn derive_enc_from_signing(sk: &SigningKey) -> (Bytes32, Bytes32) {
+    let seed = sk.to_bytes();
+    let dk = blake3::derive_key("GXT-ENC-X25519-FROM-ED25519", &seed);
+    let esk = XSecret::from(dk);
+    let epk = XPublicKey::from(&esk);
+    (esk.to_bytes(), epk.to_bytes())
+}
+
+fn enc_derive_key_from_pairs(my_esk: &Bytes32, their_epk: &Bytes32) -> Key {
+    let sk = XSecret::from(*my_esk);
+    let vk = XPublicKey::from(*their_epk);
+    let shared = sk.diffie_hellman(&vk);
+    let k = blake3::derive_key("GXT-ENC-XCHACHA20POLY1305", shared.as_bytes());
+    Key::from_slice(&k).to_owned()
 }
 
 fn parse_json_to_cbor(s: &str) -> Result<Option<Value>, GxtError> {
