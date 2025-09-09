@@ -2,6 +2,13 @@
 resolver = "2"
 members = ["gxt", "gxt-cli"]
 
+[workspace.package]
+edition = "2024"
+authors = ["hardliner66"]
+license = "MIT OR Apache-2.0"
+version = "0.5.0"
+repository = "https://github.com/hardliner66/gxt"
+
 [workspace.dependencies]
 serde_json = "1"
 
