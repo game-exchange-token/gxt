@@ -109,7 +109,7 @@ fn main() -> Result<()> {
         Cmd::Id { out, key, meta } => {
             let sk_hex = fs::read_to_string(key)?;
             let meta_json = value_or_stdin(&meta)?;
-            let token = gxt::make_identity(&sk_hex, &meta_json)?;
+            let token = gxt::make_id_card(&sk_hex, &meta_json)?;
             write_out_string(&token, out.as_deref())?;
         }
         Cmd::Verify { msg, json } => {
@@ -135,7 +135,7 @@ fn main() -> Result<()> {
             let sk = fs::read_to_string(key)?;
             let id_card = fs::read_to_string(to)?;
             let body = value_or_stdin(&body)?;
-            let tok = gxt::make_encrypted_message(&sk, &id_card, &body, parent)?;
+            let tok = gxt::encrypt_message(&sk, &id_card, &body, parent)?;
             write_out_string(&tok, out.as_deref())?;
         }
         Cmd::Decrypt { key, msg, json } => {

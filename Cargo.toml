@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["gxt", "gxt-cli"]
+members = ["gxt", "gxt-cli", "gxt-api-c"]
 
 [workspace.package]
 edition = "2024"
@@ -12,7 +12,7 @@ repository = "https://github.com/hardliner66/gxt"
 documentation = "https://docs.rs/gxt/latest/gxt/"
 
 [workspace.dependencies]
-serde_json = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
 
 [profile.release]
 lto = true

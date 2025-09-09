@@ -1,167 +1,6 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::similar_names)]
-
-//! # GXT (Game Exchange Token)
-//!
-//! Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games.
-//!
-//! See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
-//!
-//! - [Rationale](#rationale)
-//! - [About](#about)
-//! - [Install](#install)
-//! - [Demo](#demo)
-//! - [CLI](#cli)
-//!   - [General](#general)
-//!   - [Keygen](#keygen)
-//!   - [Id](#id)
-//!   - [Verify](#verify)
-//!   - [Msg](#msg)
-//!   - [Decrypt](#decrypt)
-//!
-//! ## Rationale
-//! I was thinking about how it could be possible to add trading
-//! between two players to a singleplayer game as part of a mod. Mostly out of curiosity to see
-//! if it was doable or too much work. At first I thought about having a server that manages
-//! the trades, but then I thought that not everybody can or wants to set up a server.
-//!
-//! Thats also when I had the idea to package the data into string tokens that can be sent
-//! via discord and started researching how to make this somewhat secure and
-//! easy to use and implement.
-//!
-//! With the current design, every message is signed and encrypted for a designated receiver.
-//! This prevents people from fulfilling a trade request and then sending the fulfillment to
-//! 50 people who all collect the rewards. Its still not as secure as server side validation,
-//! but thats okay for me.
-//!
-//! While working on this, I also realized that there is potential for more than just trading,
-//! so I removed all the trade specific fields and the protocol now takes an opaque payload
-//! that can contain any valid json value. (Strings, Numbers, Maps, etc.)
-//!
-//! ## About
-//! The protocol uses an Ed25519 key pair for signing messages and to derive a X25519 key pair
-//! from encryption.
-//!
-//! The size of the token before encoding is limited to 64KB.
-//!
-//! Because this is intended to be easy to integrate by mod authors, a library and cli are provided.
-//! Both are written in rust, but I plan on providing wrappers for other languages as well. The library
-//! can also compile to wasm, making it possible to use this in a web context.
-//!
-//! ## Install
-//! ```bash
-//! cargo install gxt-cli
-//! ```
-//!
-//! ## Demo
-//! ```bash
-//! # Create keys for communication
-//! gxt keygen --out alice.key
-//! gxt keygen --out bob.key
-//!
-//! # Create an id card for bob
-//! echo '{"name":"Bob"}' | gxt id bob.key --out bob.id --meta -
-//!
-//! # Create a message for bob using their id card and your own key
-//! gxt msg --key alice.key --to bob.id --out msg_to_bob.gxt --body '{"hello":"world"}'
-//!
-//! # Verify if the message is valid and signed
-//! gxt verify --file msg_to_bob.gxt
-//!
-//! # Decrypt the message using bobs key
-//! gxt decrypt --key bob.key --file msg_to_bob.gxt
-//!
-//! # Try decrypting a message with a key its not intended for
-//! gxt keygen --out charlie.key
-//! gxt decrypt --key charlie.key --file msg_to_bob.gxt
-//! ```
-//!
-//! ## CLI
-//! ### General
-//! ```
-//! GXT (Game Exchange Token)
-//!
-//! Usage: gxt <COMMAND>
-//!
-//! Commands:
-//!   keygen   Generates a new private key
-//!   id       Generate an ID card containing the data about a peer
-//!   verify   Verify a message
-//!   msg      Create an encrypted message
-//!   decrypt  Decrypt a message
-//!   help     Print this message or the help of the given subcommand(s)
-//!
-//! Options:
-//!   -h, --help     Print help
-//!   -V, --version  Print version
-//! ```
-//!
-//! ### Keygen
-//! ```
-//! Generates a new private key
-//!
-//! Usage: gxt keygen --out <OUT>
-//!
-//! Options:
-//!   -o, --out <OUT>  Where to store the key
-//!   -h, --help       Print help
-//! ```
-//!
-//! ### Id
-//! ```
-//! Generate an ID card containing the data about a peer
-//!
-//! Usage: gxt id [OPTIONS] --meta <META> <KEY>
-//!
-//! Arguments:
-//!   <KEY>  The key of the person creating the id card
-//!
-//! Options:
-//!   -m, --meta <META>  Meta data for the id card. Can be anything, but must be set. Pass - to read from stdin
-//!   -o, --out <OUT>    Where to store the id card token
-//!   -h, --help         Print help
-//! ```
-//!
-//! ### Verify
-//! ```
-//! Verify a message
-//!
-//! Usage: gxt.exe verify [OPTIONS] <--msg <MSG>|--file <FILE>>
-//!
-//! Options:
-//!   -m, --msg <MSG>    The string token containing the message. Pass - to read from stdin
-//!   -f, --file <FILE>  The path to the encrypted message
-//!   -j, --json         Print output as json
-//!   -h, --help         Print help
-//! ```
-//!
-//! ### Msg
-//! ```
-//! Create an encrypted message
-//!
-//! Usage: gxt msg [OPTIONS] --key <KEY> --to <TO> --body <BODY>
-//!
-//! Options:
-//!   -k, --key <KEY>        The key of the sender
-//!   -t, --to <TO>          The id card of the recipient
-//!   -p, --parent <PARENT>  The parent of this message
-//!   -b, --body <BODY>      The body of the message. Can be anything, but must be set. Pass - to read from stdin
-//!   -o, --out <OUT>        Where to store the message token
-//!   -h, --help             Print help
-//! ```
-//!
-//! ### Decrypt
-//! ```
-//! Decrypt a message
-//!
-//! Usage: gxt.exe decrypt [OPTIONS] --key <KEY> <--msg <MSG>|--file <FILE>>
-//!
-//! Options:
-//!   -k, --key <KEY>    The key of the receiver
-//!   -m, --msg <MSG>    The string token containing the message. Pass - to read from stdin
-//!   -f, --file <FILE>  The path to the encrypted message
-//!   -j, --json         Print output as json
-//!   -h, --help         Print help
+#![doc = include_str!("../../README.md")]
 
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use serde::Serialize;
@@ -291,29 +130,29 @@ impl fmt::Display for Rec {
     }
 }
 
-/// Creates a private key for a peer
+/// Creates a private key for a peer.
 pub fn make_key() -> String {
-    let sk = SigningKey::generate(&mut OsRng);
-    hex::encode(sk.to_bytes())
+    let key = SigningKey::generate(&mut OsRng);
+    hex::encode(key.to_bytes())
 }
 
 /// Creates an ID card containing the necessary data for
-/// the encrypted communication and some opaque meta data
+/// the encrypted communication and some opaque meta data.
 ///
 /// # Errors
-/// - returns a corresponding [`GxtError`], depending on what went wrong
-pub fn make_identity(sk: &str, meta: &str) -> Result<String, GxtError> {
-    let sk = parse_sk(sk.trim())?;
+/// - returns a corresponding [`GxtError`], depending on what went wrong.
+pub fn make_id_card(key: &str, meta: &str) -> Result<String, GxtError> {
+    let key = parse_key(key.trim())?;
     let meta = parse_json_to_cbor(meta.trim())?.ok_or(GxtError::PayloadRequired)?;
-    make(&sk, PayloadKind::Id, &meta, None)
+    make(&key, PayloadKind::Id, &meta, None)
 }
 
 /// Verify the signature of a message and return a parsed [`Rec`].
 ///
 /// # Errors
-/// - returns a corresponding [`GxtError`], depending on what went wrong
-pub fn verify(token: &str) -> Result<Rec, GxtError> {
-    let raw = decode_token(token.trim())?;
+/// - returns a corresponding [`GxtError`], depending on what went wrong.
+pub fn verify(msg: &str) -> Result<Rec, GxtError> {
+    let raw = decode_message(msg.trim())?;
     let val: Value = serde_cbor::from_slice(&raw)?;
     let a = match val {
         Value::Array(a) if a.len() == 8 => a,
@@ -383,9 +222,9 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
 /// ID card that was passed in.
 ///
 /// # Errors
-/// - returns a corresponding [`GxtError`], depending on what went wrong
-pub fn make_encrypted_message(
-    sk: &str,
+/// - returns a corresponding [`GxtError`], depending on what went wrong.
+pub fn encrypt_message(
+    key: &str,
     id_card: &str,
     body: &str,
     parent: Option<String>,
@@ -396,11 +235,11 @@ pub fn make_encrypted_message(
         Some(h) => Some(parse_hex::<32>(&h)?),
         None => None,
     };
-    let sk = parse_sk(sk.trim())?;
+    let key = parse_key(key.trim())?;
     let body = parse_json_to_cbor(body.trim())?.ok_or(GxtError::PayloadRequired)?;
-    let (my_esk, my_epk) = derive_enc_from_signing(&sk);
-    let key = enc_derive_key_from_pairs(&my_esk, &pk);
-    let cipher = XChaCha20Poly1305::new(&key);
+    let (my_esk, my_epk) = derive_enc_from_signing(&key);
+    let ekey = enc_derive_key_from_pairs(&my_esk, &pk);
+    let cipher = XChaCha20Poly1305::new(&ekey);
     let mut n = [0u8; 24];
     OsRng.fill_bytes(&mut n);
     let nonce = XNonce::from_slice(&n);
@@ -421,22 +260,22 @@ pub fn make_encrypted_message(
     encm.insert(Value::Text("ct".into()), Value::Text(hex(&ct)));
     m.insert(Value::Text("enc".into()), Value::Map(encm));
     let payload = Value::Map(m);
-    make(&sk, PayloadKind::Msg, &payload, parent)
+    make(&key, PayloadKind::Msg, &payload, parent)
 }
 
 /// Verify the signature of a message, decrypt its payload and return a parsed [`Rec`].
 ///
 /// # Errors
-/// - returns a corresponding [`GxtError`], depending on what went wrong
-pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
-    let mut rec = match verify(token.trim()) {
+/// - returns a corresponding [`GxtError`], depending on what went wrong.
+pub fn decrypt_message(msg: &str, key: &str) -> Result<Rec, GxtError> {
+    let mut rec = match verify(msg.trim()) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("invalid token: {e}");
+            eprintln!("invalid message: {e}");
             std::process::exit(1);
         }
     };
-    let sk = SigningKey::from_bytes(&parse_hex::<32>(sk.trim())?);
+    let key = SigningKey::from_bytes(&parse_hex::<32>(key.trim())?);
     let Value::Map(map) = &rec.payload else {
         return Err(GxtError::Invalid);
     };
@@ -460,12 +299,12 @@ pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
         _ => return Err(GxtError::Invalid),
     };
 
-    let (_my_esk, my_epk) = derive_enc_from_signing(&sk);
+    let (_my_esk, my_epk) = derive_enc_from_signing(&key);
     if to != my_epk {
         return Err(GxtError::AccessDenied);
     }
 
-    let (my_esk, _) = derive_enc_from_signing(&sk);
+    let (my_esk, _) = derive_enc_from_signing(&key);
     let key = enc_derive_key_from_pairs(&my_esk, &from);
     let cipher = XChaCha20Poly1305::new(&key);
     let nonce = XNonce::from_slice(&n);
@@ -554,13 +393,13 @@ fn preimage(bytes0: &[u8]) -> Vec<u8> {
 }
 
 fn make(
-    sk: &SigningKey,
+    key: &SigningKey,
     kind: PayloadKind,
     payload: &Value,
     parent: Option<Bytes32>,
 ) -> Result<String, GxtError> {
-    let vk = sk.verifying_key().to_bytes();
-    let (_, pk) = derive_enc_from_signing(sk);
+    let vk = key.verifying_key().to_bytes();
+    let (_, pk) = derive_enc_from_signing(key);
     let b0 = bytes0(&vk, &pk, kind, payload)?;
     if b0.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
@@ -569,13 +408,13 @@ fn make(
     let mut id = [0u8; 32];
     id.copy_from_slice(blake3::hash(&b0).as_bytes());
     let mut sig = [0u8; 64];
-    sig.copy_from_slice(&sk.sign(&preimage(&b0)).to_bytes());
+    sig.copy_from_slice(&key.sign(&preimage(&b0)).to_bytes());
 
-    encode_token(1, &vk, &pk, kind, payload, parent, &id, &sig)
+    encode_message(1, &vk, &pk, kind, payload, parent, &id, &sig)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn encode_token(
+fn encode_message(
     v: u8,
     vk: &Bytes32,
     pk: &Bytes32,
@@ -596,8 +435,8 @@ fn encode_token(
     Ok(format!("{}{}", PREFIX, bs58::encode(comp).into_string()))
 }
 
-fn decode_token(token: &str) -> Result<Vec<u8>, GxtError> {
-    let rest = token.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
+fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
+    let rest = message.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
     let comp = bs58::decode(rest)
         .into_vec()
         .map_err(|e| GxtError::Decode(e.to_string()))?;
@@ -628,7 +467,7 @@ fn parse_hex<const SIZE: usize>(h: &str) -> Result<[u8; SIZE], GxtError> {
     Ok(a)
 }
 
-fn parse_sk(h: &str) -> Result<SigningKey, GxtError> {
+fn parse_key(h: &str) -> Result<SigningKey, GxtError> {
     let v = parse_hex::<32>(h)?;
     let mut a = [0u8; 32];
     a.copy_from_slice(&v);
@@ -649,8 +488,8 @@ use rand::RngCore;
 use rand::rngs::OsRng;
 use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
 
-fn derive_enc_from_signing(sk: &SigningKey) -> (Bytes32, Bytes32) {
-    let seed = sk.to_bytes();
+fn derive_enc_from_signing(key: &SigningKey) -> (Bytes32, Bytes32) {
+    let seed = key.to_bytes();
     let dk = blake3::derive_key("GXT-ENC-X25519-FROM-ED25519", &seed);
     let esk = XSecret::from(dk);
     let epk = XPublicKey::from(&esk);
@@ -658,9 +497,9 @@ fn derive_enc_from_signing(sk: &SigningKey) -> (Bytes32, Bytes32) {
 }
 
 fn enc_derive_key_from_pairs(my_esk: &Bytes32, their_epk: &Bytes32) -> Key {
-    let sk = XSecret::from(*my_esk);
+    let key = XSecret::from(*my_esk);
     let vk = XPublicKey::from(*their_epk);
-    let shared = sk.diffie_hellman(&vk);
+    let shared = key.diffie_hellman(&vk);
     let k = blake3::derive_key("GXT-ENC-XCHACHA20POLY1305", shared.as_bytes());
     Key::from_slice(&k).to_owned()
 }

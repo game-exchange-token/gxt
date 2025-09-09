@@ -1,0 +1,19 @@
+[package]
+name = "gxt-api-c"
+edition = "2024"
+description.workspace = true
+authors.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+documentation.workspace = true
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+gxt = { version = "0.11.0", path = "../gxt" }
+serde_json.workspace = true
+
+[build-dependencies]
+cbindgen = "0.29.0"

@@ -2,10 +2,9 @@
 
 Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games.
 
-See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
-
 - [Rationale](#rationale)
 - [About](#about)
+- [C API](#c-api)
 - [Install](#install)
 - [Demo](#demo)
 - [CLI](#cli)
@@ -42,8 +41,21 @@ from encryption.
 The size of the token before encoding is limited to 64KB.
 
 Because this is intended to be easy to integrate by mod authors, a library and cli are provided.
-Both are written in rust, but I plan on providing wrappers for other languages as well. The library
-can also compile to wasm, making it possible to use this in a web context.
+Both are written in rust. There is also a wrapper that exposes a C API called `gxt-api-c`.
+The library can also compile to wasm, making it possible to use this in a web context.
+
+## C API
+To use the C API, clone the repository and then build the crate `gxt-api-c`.
+This will create a dynamic and a static library, as well as the corresponding include header,
+inside the target directory.
+
+```bash
+git clone https://github.com/hardliner66/gxt
+cd gxt
+cargo build -p gxt-api-c --release
+cd target/release
+ls
+```
 
 ## Install
 ```bash
