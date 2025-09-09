@@ -38,7 +38,7 @@ The payload is any CBOR/JSON value. The protocol does not interpret it.
 ## Verification
 To verify a token:
 1. Strip `gxt:` and Base58-decode, then Brotli-decompress to raw CBOR.
-2. Parse as a 5-element CBOR array `[v, vk, pk, kind, payload, parent, id, sig]`.
+2. Parse as a 8-element CBOR array `[v, vk, pk, kind, payload, parent, id, sig]`.
 3. Assert:
    - `v == 1`
    - `vk.len == 32`, `pk.len == 32`, `parent.len == 32 || 0`, `id.len == 32 || 0`, `sig.len == 64 || 0`
