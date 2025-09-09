@@ -12,11 +12,9 @@ See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
   - [General](#general)
   - [Keygen](#keygen)
   - [Id](#id)
+  - [Verify](#verify)
   - [Msg](#msg)
   - [Decrypt](#decrypt)
-  - [Verify](#verify)
-  - [Decrypt-file](#decrypt-file)
-  - [Verify-file](#verify-file)
 
 ## Rationale
 I was thinking about how it could be possible to add trading
@@ -55,24 +53,24 @@ cargo install gxt-cli
 ## Demo
 ```bash
 # Create keys for communication
-gxt keygen -o alice.key
-gxt keygen -o bob.key
+gxt keygen --out alice.key
+gxt keygen --out bob.key
 
 # Create an id card for bob
-echo '{"name":"Bob"}' | gxt id bob.key -o bob.id
+echo '{"name":"Bob"}' | gxt id bob.key --out bob.id --meta -
 
 # Create a message for bob using their id card and your own key
-echo '{"hello":"world"}' | gxt msg alice.key bob.id -o msg_to_bob.gxt
+gxt msg --key alice.key --to bob.id --out msg_to_bob.gxt --body '{"hello":"world"}'
 
 # Verify if the message is valid and signed
-gxt verify msg_to_bob.gxt
+gxt verify --file msg_to_bob.gxt
 
 # Decrypt the message using bobs key
-gxt decrypt bob.key msg_to_bob.gxt
+gxt decrypt --key bob.key --file msg_to_bob.gxt
 
 # Try decrypting a message with a key its not intended for
-gxt keygen -o charlie.key
-gxt decrypt charlie.key msg_to_bob.gxt
+gxt keygen --out charlie.key
+gxt decrypt --key charlie.key --file msg_to_bob.gxt
 ```
 
 ## CLI
@@ -83,14 +81,12 @@ GXT (Game Exchange Token)
 Usage: gxt <COMMAND>
 
 Commands:
-  keygen        Generates a new private key
-  id            Generate an ID card that contains the public keys of the sender and some optional meta data
-  msg           Create an encrypted message for a receiver
-  decrypt       Decrypt a message passed as argument or read from stdin
-  verify        Verify a message passed as argument or read from stdin
-  decrypt-file  Decrypt a message read from a file
-  verify-file   Verify a message read from a file
-  help          Print this message or the help of the given subcommand(s)
+  keygen   Generates a new private key
+  id       Generate an ID card containing the data about a peer
+  verify   Verify a message
+  msg      Create an encrypted message
+  decrypt  Decrypt a message
+  help     Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
@@ -110,9 +106,9 @@ Options:
 
 ### Id
 ```
-Generate an ID card that contains the public keys of the sender and some optional meta data
+Generate an ID card containing the data about a peer
 
-Usage: gxt.exe id [OPTIONS] --meta <META> <KEY>
+Usage: gxt id [OPTIONS] --meta <META> <KEY>
 
 Arguments:
   <KEY>  The key of the person creating the id card
@@ -123,11 +119,23 @@ Options:
   -h, --help         Print help
 ```
 
+### Verify
+```
+Verify a message
+
+Usage: gxt verify <--msg <MSG>|--file <FILE>>
+
+Options:
+  -m, --msg <MSG>    The string token containing the message. Pass - to read from stdin
+  -f, --file <FILE>  The path to the encrypted message
+  -h, --help         Print help
+```
+
 ### Msg
 ```
-Create an encrypted message for a receiver
+Create an encrypted message
 
-Usage: gxt.exe msg [OPTIONS] --key <KEY> --to <TO> --body <BODY>
+Usage: gxt msg [OPTIONS] --key <KEY> --to <TO> --body <BODY>
 
 Options:
   -k, --key <KEY>        The key of the sender
@@ -140,54 +148,13 @@ Options:
 
 ### Decrypt
 ```
-Decrypt a message passed as argument or read from stdin
+Decrypt a message
 
-Usage: gxt.exe decrypt --key <KEY> <MSG>
-
-Arguments:
-  <MSG>  The string token containing the encrypted message. Pass - to read from stdin
+Usage: gxt decrypt --key <KEY> <--msg <MSG>|--file <FILE>>
 
 Options:
-  -k, --key <KEY>  The key of the receiver
-  -h, --help       Print help
-```
-
-### Verify
-```
-Verify a message passed as argument or read from stdin
-
-Usage: gxt.exe verify <MSG>
-
-Arguments:
-  <MSG>  The string token containing the message. Pass - to read from stdin
-
-Options:
-  -h, --help  Print help
-```
-
-### Decrypt-file
-```
-Decrypt a message read from a file
-
-Usage: gxt.exe decrypt-file --key <KEY> <MSG>
-
-Arguments:
-  <MSG>  The path to the encrypted message
-
-Options:
-  -k, --key <KEY>  The key of the receiver
-  -h, --help       Print help
-```
-
-### Verify-file
-```
-Verify a message read from a file
-
-Usage: gxt.exe verify-file <MSG>
-
-Arguments:
-  <MSG>  The path to the message
-
-Options:
-  -h, --help  Print help
+  -k, --key <KEY>    The key of the receiver
+  -m, --msg <MSG>    The string token containing the message. Pass - to read from stdin
+  -f, --file <FILE>  The path to the encrypted message
+  -h, --help         Print help
 ```

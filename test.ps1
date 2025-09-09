@@ -21,20 +21,18 @@ Remove-Item "$path/*"
 
 cargo build
 
-cargo run -q -- keygen -o tmp/alice.key
-cargo run -q -- keygen -o tmp/bob.key
+# Create keys for communication
+cargo run -q -- keygen --out alice.key
+cargo run -q -- keygen --out bob.key
 
-Write-Host "make id"
-cargo run -q -- id tmp/bob.key -o tmp/bob.id --meta '{"name":"Bob"}'
+# Create an id card for bob
+Write-Output '{"name":"Bob"}' | cargo run -q -- id bob.key --out bob.id --meta -
 
-Write-Host "verify id"
-cargo run -q -- verify tmp/bob.id
+# Create a message for bob using their id card and your own key
+cargo run -q -- msg --key alice.key --to bob.id --out msg_to_bob.gxt --body '{"hello":"world"}'
 
-Write-Host "make message"
-cargo run -q -- msg --key tmp/alice.key --to tmp/bob.id -o tmp/msg_to_bob.gxt --body '{"hello":"world"}'
+# Verify if the message is valid and signed
+cargo run -q -- verify --file msg_to_bob.gxt
 
-Write-Host "verify message"
-cargo run -q -- verify tmp/msg_to_bob.gxt
-
-Write-Host "decrypt message"
-cargo run -q -- decrypt --key tmp/bob.key tmp/msg_to_bob.gxt
+# Decrypt the message using bobs key
+cargo run -q -- decrypt --key bob.key --file msg_to_bob.gxt

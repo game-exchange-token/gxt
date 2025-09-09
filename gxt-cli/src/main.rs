@@ -15,6 +15,18 @@ struct Cli {
     cmd: Cmd,
 }
 
+#[derive(Parser)]
+#[group(required = true, multiple = false)]
+pub struct MsgInput {
+    /// The string token containing the message. Pass - to read from stdin
+    #[arg(short, long)]
+    msg: Option<String>,
+
+    /// The path to the encrypted message
+    #[arg(short, long)]
+    file: Option<PathBuf>,
+}
+
 #[derive(Subcommand)]
 enum Cmd {
     /// Generates a new private key
@@ -24,7 +36,7 @@ enum Cmd {
         out: PathBuf,
     },
 
-    /// Generate an ID card that contains the public keys of the sender and some optional meta data
+    /// Generate an ID card containing the data about a peer
     Id {
         /// The key of the person creating the id card
         key: PathBuf,
@@ -38,7 +50,13 @@ enum Cmd {
         out: Option<PathBuf>,
     },
 
-    /// Create an encrypted message for a receiver
+    /// Verify a message
+    Verify {
+        #[clap(flatten)]
+        msg: MsgInput,
+    },
+
+    /// Create an encrypted message
     Msg {
         /// The key of the sender
         #[arg(short, long)]
@@ -61,36 +79,14 @@ enum Cmd {
         out: Option<PathBuf>,
     },
 
-    /// Decrypt a message passed as argument or read from stdin
+    /// Decrypt a message
     Decrypt {
         /// The key of the receiver
         #[arg(short, long)]
         key: PathBuf,
 
-        /// The string token containing the encrypted message. Pass - to read from stdin
-        msg: String,
-    },
-
-    /// Verify a message passed as argument or read from stdin
-    Verify {
-        /// The string token containing the message. Pass - to read from stdin
-        msg: String,
-    },
-
-    /// Decrypt a message read from a file
-    DecryptFile {
-        /// The key of the receiver
-        #[arg(short, long)]
-        key: PathBuf,
-
-        /// The path to the encrypted message
-        msg: PathBuf,
-    },
-
-    /// Verify a message read from a file
-    VerifyFile {
-        /// The path to the message
-        msg: PathBuf,
+        #[clap(flatten)]
+        msg: MsgInput,
     },
 }
 
@@ -108,6 +104,14 @@ fn main() -> Result<()> {
             let token = gxt::make_identity(&sk_hex, &meta_json)?;
             write_out_string(&token, out.as_deref())?;
         }
+        Cmd::Verify { msg } => {
+            let token = match (msg.msg, msg.file) {
+                (Some(msg), None) => value_or_stdin(&msg)?,
+                (None, Some(file)) => fs::read_to_string(file)?,
+                _ => anyhow::bail!("Nothing to verify"),
+            };
+            println!("{}", gxt::verify(&token)?);
+        }
         Cmd::Msg {
             key,
             to,
@@ -122,22 +126,13 @@ fn main() -> Result<()> {
             write_out_string(&tok, out.as_deref())?;
         }
         Cmd::Decrypt { key, msg } => {
-            let token = value_or_stdin(&msg)?;
+            let token = match (msg.msg, msg.file) {
+                (Some(msg), None) => value_or_stdin(&msg)?,
+                (None, Some(file)) => fs::read_to_string(file)?,
+                _ => anyhow::bail!("Nothing to verify"),
+            };
             let sk = fs::read_to_string(key)?;
             println!("{}", gxt::decrypt_message(&token, &sk)?);
-        }
-        Cmd::Verify { msg } => {
-            let token = value_or_stdin(&msg)?;
-            println!("{}", gxt::verify(&token)?);
-        }
-        Cmd::DecryptFile { key, msg } => {
-            let token = fs::read_to_string(msg)?;
-            let sk = fs::read_to_string(key)?;
-            println!("{}", gxt::decrypt_message(&token, &sk)?);
-        }
-        Cmd::VerifyFile { msg } => {
-            let token = fs::read_to_string(msg)?;
-            println!("{}", gxt::verify(&token)?);
         }
     }
 
