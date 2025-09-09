@@ -2,11 +2,6 @@
 
 Minimal, signed, copy-pasteable tokens for game/mod exchanges.
 
-- Prefix: `gxt:`
-- Transport: Base58btc(Brotli(CBOR))
-- Structure: CBOR array `[v, vk, pk, payload, id, sig]`
-- `id = blake3(bytes0)`, `sig = Ed25519("GXT1" || bytes0)`
-
 See [`spec.md`](spec.md) and [`glossary.md`](glossary.md).
 
 ## Build

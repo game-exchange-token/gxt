@@ -78,25 +78,26 @@ impl fmt::Display for PayloadKind {
 #[derive(Clone, Debug)]
 pub struct Rec {
     pub v: u8,
-    pub vk: Bytes32,
-    pub pk: Bytes32,
+    pub vk: String,
+    pub pk: String,
     pub kind: PayloadKind,
     pub payload: Value,
-    pub parent: Bytes32,
-    pub id: Bytes32,
-    pub sig: Bytes64,
+    pub parent: Option<String>,
+    pub id: String,
+    pub sig: String,
 }
 
 impl fmt::Display for Rec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let id_hex = hex(&self.id);
-        let vk_hex = hex(&self.vk);
-        let pk_hex = hex(&self.pk);
         writeln!(f, "valid   : true")?;
         writeln!(f, "version : {}", self.v)?;
-        writeln!(f, "id      : {} ({})", id_hex, &id_hex[..8])?;
-        writeln!(f, "vk      : {} ({})", vk_hex, &vk_hex[..8])?;
-        writeln!(f, "pk      : {} ({})", pk_hex, &pk_hex[..8])?;
+        match &self.parent {
+            Some(parent) => writeln!(f, "parent  : {} ({})", parent, &parent[..8])?,
+            None => writeln!(f, "parent  : -")?,
+        }
+        writeln!(f, "id      : {} ({})", self.id, &self.id[..8])?;
+        writeln!(f, "vk      : {} ({})", self.vk, &self.vk[..8])?;
+        writeln!(f, "pk      : {} ({})", self.pk, &self.pk[..8])?;
         writeln!(f, "kind    : {}", self.kind)?;
         writeln!(f, "payload :")?;
         writeln!(
@@ -145,12 +146,14 @@ fn payload_to_json(p: &serde_cbor::Value) -> Result<serde_json::Value, GxtError>
     conv(p)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn cbor_array(
     v: u8,
     vk: &Bytes32,
     pk: &Bytes32,
     kind: PayloadKind,
     payload: &Value,
+    parent: Option<Bytes32>,
     id: Option<&Bytes32>,
     sig: Option<&Bytes64>,
 ) -> Result<Vec<u8>, GxtError> {
@@ -160,6 +163,7 @@ fn cbor_array(
         Value::Text(hex(pk)),
         Value::Text(kind.to_string()),
         payload.clone(),
+        Value::Text(parent.map(|v| hex(&v)).unwrap_or_default()),
         Value::Text(id.map(|v| hex(v)).unwrap_or_default()),
         Value::Text(sig.map(|v| hex(v)).unwrap_or_default()),
     ]);
@@ -172,7 +176,7 @@ fn bytes0(
     kind: PayloadKind,
     payload: &Value,
 ) -> Result<Vec<u8>, GxtError> {
-    cbor_array(1, vk, pk, kind, payload, None, None)
+    cbor_array(1, vk, pk, kind, payload, None, None, None)
 }
 
 fn preimage(bytes0: &[u8]) -> Vec<u8> {
@@ -182,7 +186,12 @@ fn preimage(bytes0: &[u8]) -> Vec<u8> {
     v
 }
 
-fn make(sk: &SigningKey, kind: PayloadKind, payload: &Value) -> Result<String, GxtError> {
+fn make(
+    sk: &SigningKey,
+    kind: PayloadKind,
+    payload: &Value,
+    parent: Option<Bytes32>,
+) -> Result<String, GxtError> {
     let vk = sk.verifying_key().to_bytes();
     let (_, pk) = derive_enc_from_signing(sk);
     let b0 = bytes0(&vk, &pk, kind, payload)?;
@@ -195,7 +204,7 @@ fn make(sk: &SigningKey, kind: PayloadKind, payload: &Value) -> Result<String, G
     let mut sig = [0u8; 64];
     sig.copy_from_slice(&sk.sign(&preimage(&b0)).to_bytes());
 
-    encode_token(1, &vk, &pk, kind, payload, &id, &sig)
+    encode_token(1, &vk, &pk, kind, payload, parent, &id, &sig)
 }
 
 pub fn make_key() -> Result<String, GxtError> {
@@ -209,19 +218,21 @@ pub fn make_identity(sk: &str, meta: &str) -> Result<String, GxtError> {
         Some(meta) => meta,
         None => serde_cbor::value::to_value(serde_json::Value::Null)?,
     };
-    make(&sk, PayloadKind::Id, &meta)
+    make(&sk, PayloadKind::Id, &meta, None)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn encode_token(
     v: u8,
     vk: &Bytes32,
     pk: &Bytes32,
     kind: PayloadKind,
     payload: &Value,
+    parent: Option<Bytes32>,
     id: &Bytes32,
     sig: &Bytes64,
 ) -> Result<String, GxtError> {
-    let cbor = cbor_array(v, vk, pk, kind, payload, Some(id), Some(sig))?;
+    let cbor = cbor_array(v, vk, pk, kind, payload, parent, Some(id), Some(sig))?;
     if cbor.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }
@@ -275,7 +286,7 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
     let raw = decode_token(token)?;
     let val: Value = serde_cbor::from_slice(&raw)?;
     let a = match val {
-        Value::Array(a) if a.len() == 7 => a,
+        Value::Array(a) if a.len() == 8 => a,
         _ => return Err(GxtError::Invalid),
     };
 
@@ -302,7 +313,8 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
         _ => return Err(GxtError::Invalid),
     };
     let parent = match a.next() {
-        Some(Value::Text(t)) => parse_hex::<32>(&t)?,
+        Some(Value::Text(t)) if !t.is_empty() => Some(parse_hex::<32>(&t)?),
+        Some(Value::Text(_)) => None,
         _ => return Err(GxtError::Invalid),
     };
     let id = match a.next() {
@@ -327,13 +339,13 @@ pub fn verify(token: &str) -> Result<Rec, GxtError> {
 
     Ok(Rec {
         v,
-        vk: vk_bytes,
-        pk,
-        parent,
+        vk: hex(&vk_bytes),
+        pk: hex(&pk),
+        parent: parent.map(|b| hex(&b)),
         kind,
         payload,
-        id,
-        sig,
+        id: hex(&id),
+        sig: hex(&sig),
     })
 }
 
@@ -370,7 +382,7 @@ pub fn make_encrypted_message(
     parent: Option<String>,
 ) -> Result<String, GxtError> {
     let id_card = verify(id_card)?;
-    let pk = id_card.pk;
+    let pk = parse_hex::<32>(&id_card.pk)?;
     let parent = match parent {
         Some(h) => Some(parse_hex::<32>(&h)?),
         None => None,
@@ -399,11 +411,8 @@ pub fn make_encrypted_message(
     encm.insert(Value::Text("n24".into()), Value::Text(hex(&n)));
     encm.insert(Value::Text("ct".into()), Value::Text(hex(&ct)));
     m.insert(Value::Text("enc".into()), Value::Map(encm));
-    if let Some(p) = parent {
-        m.insert(Value::Text("parent".into()), Value::Text(hex(&p)));
-    }
     let payload = Value::Map(m);
-    make(&sk, PayloadKind::Msg, &payload)
+    make(&sk, PayloadKind::Msg, &payload, parent)
 }
 
 pub fn decrypt_message(token: &str, sk: &str) -> Result<Rec, GxtError> {
