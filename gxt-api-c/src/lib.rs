@@ -8,6 +8,8 @@ const E_C_TO_RUST_STRING: &str = "Could not convert C string to rust string";
 ///
 /// # Safety
 /// - Returned string must be freed with [`gxt_free_string`] after use.
+///
+/// # Panics
 /// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub extern "C" fn gxt_make_key() -> *mut c_char {
@@ -19,6 +21,8 @@ pub extern "C" fn gxt_make_key() -> *mut c_char {
 ///
 /// # Safety
 /// - Returned string must be freed with [`gxt_free_string`] after use.
+///
+/// # Panics
 /// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_make_id_card(key: *const c_char, meta: *const c_char) -> *mut c_char {
@@ -37,6 +41,8 @@ pub unsafe extern "C" fn gxt_make_id_card(key: *const c_char, meta: *const c_cha
 ///
 /// # Safety
 /// - Returned string must be freed with [`gxt_free_string`] after use.
+///
+/// # Panics
 /// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_verify_message(msg: *const c_char) -> *mut c_char {
@@ -52,6 +58,8 @@ pub unsafe extern "C" fn gxt_verify_message(msg: *const c_char) -> *mut c_char {
 ///
 /// # Safety
 /// - Returned string must be freed with [`gxt_free_string`] after use.
+///
+/// # Panics
 /// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_encrypt_message(
@@ -77,6 +85,8 @@ pub unsafe extern "C" fn gxt_encrypt_message(
 ///
 /// # Safety
 /// - Returned string must be freed with [`gxt_free_string`] after use.
+///
+/// # Panics
 /// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_encrypt_message_with_parent(
@@ -104,6 +114,8 @@ pub unsafe extern "C" fn gxt_encrypt_message_with_parent(
 ///
 /// # Safety
 /// - Returned string must be freed with [`gxt_free_string`] after use.
+///
+/// # Panics
 /// - Currently panics on error.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_decrypt_message(
