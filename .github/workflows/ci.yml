@@ -65,7 +65,7 @@ jobs:
           tar czf gxt-linux.tar.gz assets/*
 
           rustup target add wasm32-wasip1
-          cargo build -p gxt-api-extism --target wasm32-wasip1
+          cargo build -p gxt-api-extism --target wasm32-wasip1 --release
 
           mv ./target/wasm32-wasip1/release/gxt_api_extism.wasm gxt_extism_wasip1.wasm
 
