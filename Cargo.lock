@@ -601,7 +601,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-api-c"
-version = "0.20.0"
+version = "0.0.0"
 dependencies = [
  "cbindgen",
  "gxt",
@@ -610,7 +610,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-api-extism"
-version = "0.1.0"
+version = "0.20.0"
 dependencies = [
  "extism-pdk",
  "getrandom 0.2.16",
