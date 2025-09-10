@@ -1,10 +1,10 @@
 [package]
 name = "gxt-api-extism"
 edition = "2024"
+version = "0.22.0"
 description.workspace = true
 authors.workspace = true
 license.workspace = true
-version.workspace = true
 repository.workspace = true
 documentation.workspace = true
 publish = false
