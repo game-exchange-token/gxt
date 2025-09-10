@@ -48,27 +48,17 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli --release
           strip --strip-all ./target/release/gxt
 
-          mkdir -p assets/shared
-          mv ./target/release/libgxt_c.so assets/shared/libgxt.so
-
-          mkdir -p assets/static
-          mv ./target/release/libgxt_c.a assets/static/libgxt.a
-
-          mkdir -p assets/include
-          mv ./target/release/gxt.h assets/include/
-
-          mv ./target/release/gxt assets/
-          tar czf gxt-linux.tar.gz assets/*
+          mv ./target/release/gxt gxt-linux
 
       - name: Upload release
         id: upload-release-linux
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: gxt-linux.tar.gz
+          files: gxt-linux
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -84,26 +74,16 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli --release
 
-          mkdir -p assets/shared
-          mv ./target/release/libgxt_c.dylib assets/shared/libgxt.dylib
-
-          mkdir -p assets/static
-          mv ./target/release/libgxt_c.a assets/static/libgxt.a
-
-          mkdir -p assets/include
-          mv ./target/release/gxt.h assets/include/
-
-          mv ./target/release/gxt assets/
-          tar czf gxt-macos.tar.gz assets/*
+          mv ./target/release/gxt gxt-macos
 
       - name: Upload release
         id: upload-release-macos
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: gxt-macos.tar.gz
+          files: gxt-macos
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -116,26 +96,15 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli --release
 
-          mkdir -p assets/shared
-          mv ./target/release/gxt_c.dll assets/shared/gxt.dll
-
-          mkdir -p assets/static
-          mv ./target/release/gxt_c.lib assets/static/gxt.lib
-
-          mkdir -p assets/include
-          mv ./target/release/gxt.h assets/include/
-
-          mv ./target/release/gxt.exe assets/
-
-          Compress-Archive -Path assets\* -DestinationPath gxt-win.zip -Force
+          mv ./target/release/gxt.exe gxt.exe
 
       - name: Upload release
         id: upload-release-windows
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: gxt-win.zip
+          files: gxt.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
