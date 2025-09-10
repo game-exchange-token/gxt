@@ -58,7 +58,7 @@ jobs:
           mv ./target/release/libgxt_c.a assets/static/libgxt.a
 
           mkdir -p assets/include
-          mv ./target/release/gxt_c.h assets/include/gxt.h
+          mv ./target/release/gxt.h assets/include/
 
           mv ./target/release/gxt assets/
           tar czf gxt-linux.tar.gz assets/*
@@ -93,7 +93,7 @@ jobs:
           mv ./target/release/libgxt_c.a assets/static/libgxt.a
 
           mkdir -p assets/include
-          mv ./target/release/gxt_c.h assets/include/gxt.h
+          mv ./target/release/gxt.h assets/include/
 
           mv ./target/release/gxt assets/
           tar czf gxt-macos.tar.gz assets/*
@@ -125,7 +125,7 @@ jobs:
           mv ./target/release/gxt_c.lib assets/static/gxt.lib
 
           mkdir -p assets/include
-          mv ./target/release/gxt_c.h assets/include/gxt.h
+          mv ./target/release/gxt.h assets/include/
 
           mv ./target/release/gxt.exe assets/
       - uses: montudor/action-zip@v1
