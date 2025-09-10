@@ -9,6 +9,7 @@ repository.workspace = true
 documentation.workspace = true
 
 [lib]
+name = "gxt"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
