@@ -3,13 +3,7 @@
 use extism_convert::*;
 use serde::{Deserialize, Serialize};
 
-pub mod exports {
-    pub const MAKE_KEY: &str = "make_key";
-    pub const MAKE_ID_CARD: &str = "make_id_card";
-    pub const VERIFY: &str = "verify";
-    pub const ENCRYPT: &str = "encrypt";
-    pub const DECRYPT: &str = "decrypt";
-}
+pub use serde_json::{json, to_value};
 
 #[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
@@ -88,4 +82,32 @@ pub struct EncryptRequest {
 pub struct DecryptRequest {
     pub message: String,
     pub key: String,
+}
+
+#[allow(non_camel_case_types)]
+pub mod calls {
+    use crate::DecryptRequest;
+    use crate::EncryptRequest;
+    use crate::Envelope;
+    use crate::IdCardRequest;
+
+    pub const MAKE_KEY: &str = "make_key";
+    pub type MAKE_KEY_IN = ();
+    pub type MAKE_KEY_OUT = String;
+
+    pub const MAKE_ID_CARD: &str = "make_id_card";
+    pub type MAKE_ID_IN = IdCardRequest;
+    pub type MAKE_ID_OUT = String;
+
+    pub const VERIFY_MESSAGE: &str = "verify_message";
+    pub type VERIFY_MESSAGE_IN = String;
+    pub type VERIFY_MESSAGE_OUT = Envelope;
+
+    pub const ENCRYPT_MESSAGE: &str = "encrypt_message";
+    pub type ENCRYPT_MESSAGE_IN = EncryptRequest;
+    pub type ENCRYPT_MESSAGE_OUT = String;
+
+    pub const DECRYPT_MESSAGE: &str = "decrypt_message";
+    pub type DECRYPT_MESSAGE_IN = DecryptRequest;
+    pub type DECRYPT_MESSAGE_OUT = Envelope;
 }
