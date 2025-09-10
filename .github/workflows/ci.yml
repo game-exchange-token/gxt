@@ -76,7 +76,7 @@ jobs:
         with:
           files: |
             gxt-linux.tar.gz
-            gxt_api_extism.wasm
+            gxt_extism_wasip1.wasm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
