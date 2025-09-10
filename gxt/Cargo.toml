@@ -8,6 +8,9 @@ authors.workspace = true
 repository.workspace = true
 readme = "../README.md"
 
+[lib]
+crate-type = ["lib"]
+
 [dependencies]
 serde_json.workspace = true
 serde_cbor = "0.11"

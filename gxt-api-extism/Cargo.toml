@@ -1,6 +1,6 @@
 [package]
 name = "gxt-api-extism"
-edition = "2021"
+edition = "2024"
 description.workspace = true
 authors.workspace = true
 license.workspace = true
@@ -16,5 +16,5 @@ crate-type = ["cdylib"]
 [dependencies]
 extism-pdk = "1.3.0"
 serde = { version = "1", features = ["derive"] }
-getrandom = { version = "0.2.16", features = ["custom"] }
+# getrandom = { version = "0.2.16", features = ["custom"] }
 gxt = { version = "0.21.0", path = "../gxt" }
