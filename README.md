@@ -89,7 +89,7 @@ gxt decrypt --key charlie.key --file msg_to_bob.gxt
 
 ## CLI
 ### General
-```
+```txt
 GXT (Game Exchange Token)
 
 Usage: gxt <COMMAND>
@@ -108,7 +108,7 @@ Options:
 ```
 
 ### Keygen
-```
+```txt
 Generates a new private key
 
 Usage: gxt keygen --out <OUT>
@@ -119,7 +119,7 @@ Options:
 ```
 
 ### Id
-```
+```txt
 Generate an ID card containing the data about a peer
 
 Usage: gxt id [OPTIONS] --meta <META> <KEY>
@@ -134,7 +134,7 @@ Options:
 ```
 
 ### Verify
-```
+```txt
 Verify a message
 
 Usage: gxt.exe verify [OPTIONS] <--msg <MSG>|--file <FILE>>
@@ -147,7 +147,7 @@ Options:
 ```
 
 ### Msg
-```
+```txt
 Create an encrypted message
 
 Usage: gxt msg [OPTIONS] --key <KEY> --to <TO> --body <BODY>
@@ -162,7 +162,7 @@ Options:
 ```
 
 ### Decrypt
-```
+```txt
 Decrypt a message
 
 Usage: gxt.exe decrypt [OPTIONS] --key <KEY> <--msg <MSG>|--file <FILE>>
