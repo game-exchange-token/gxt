@@ -583,7 +583,7 @@ dependencies = [
 
 [[package]]
 name = "gxt"
-version = "0.20.0"
+version = "0.21.0"
 dependencies = [
  "blake3",
  "brotli",
@@ -610,7 +610,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-api-extism"
-version = "0.20.0"
+version = "0.21.0"
 dependencies = [
  "extism-pdk",
  "getrandom 0.2.16",
@@ -620,7 +620,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-cli"
-version = "0.20.0"
+version = "0.21.0"
 dependencies = [
  "anyhow",
  "clap",
