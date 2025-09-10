@@ -11,14 +11,14 @@ pub mod exports {
     pub const DECRYPT: &str = "decrypt";
 }
 
-#[derive(Debug, FromBytes, Deserialize, Serialize, ToBytes)]
+#[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
 pub struct IdCardRequest {
     pub key: String,
     pub meta: serde_json::Value,
 }
 
-#[derive(Debug, FromBytes, Deserialize, Serialize, ToBytes)]
+#[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
 pub enum PayloadKind {
     Id,
@@ -34,7 +34,7 @@ impl From<gxt::PayloadKind> for PayloadKind {
     }
 }
 
-#[derive(Debug, FromBytes, Deserialize, Serialize, ToBytes)]
+#[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
 pub struct Envelope {
     pub version: u8,
@@ -74,7 +74,7 @@ impl From<gxt::Envelope> for Envelope {
     }
 }
 
-#[derive(Debug, FromBytes, Deserialize, Serialize, ToBytes)]
+#[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
 pub struct EncryptRequest {
     pub key: String,
@@ -83,7 +83,7 @@ pub struct EncryptRequest {
     pub parent: Option<String>,
 }
 
-#[derive(Debug, FromBytes, Deserialize, Serialize, ToBytes)]
+#[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
 pub struct DecryptRequest {
     pub message: String,
