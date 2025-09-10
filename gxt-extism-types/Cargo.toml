@@ -1,5 +1,5 @@
 [package]
-name = "gxt-api-extism"
+name = "gxt-extism-types"
 edition = "2024"
 description.workspace = true
 authors.workspace = true
@@ -7,16 +7,10 @@ license.workspace = true
 version.workspace = true
 repository.workspace = true
 documentation.workspace = true
-publish = false
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-crate-type = ["cdylib"]
 
 [dependencies]
 gxt.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_cbor.workspace = true
-extism-pdk = "1.3.0"
-gxt-extism-types = { version = "0.21.0", path = "../gxt-extism-types" }
+extism-convert = "1.3.0"

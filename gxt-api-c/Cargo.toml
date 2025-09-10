@@ -14,8 +14,8 @@ name = "gxt_c"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
+gxt.workspace = true
 serde_json.workspace = true
-gxt = { version = "0.21.0", path = "../gxt" }
 
 [build-dependencies]
 cbindgen = "0.29.0"

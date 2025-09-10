@@ -64,12 +64,19 @@ jobs:
 
           tar czf gxt-linux.tar.gz assets/*
 
+          rustup target add wasm32-wasip1
+          cargo build -p gxt-api-extism --target wasm32-wasip1
+
+          mv ./target/wasm32-wasip1/release/gxt_api_extism.wasm gxt_extism_wasip1.wasm
+
       - name: Upload release
         id: upload-release-linux
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: gxt-linux
+          files: |
+            gxt-linux.tar.gz
+            gxt_api_extism.wasm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -105,7 +112,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: gxt-macos
+          files: gxt-macos.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

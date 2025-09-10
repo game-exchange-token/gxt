@@ -614,7 +614,10 @@ version = "0.21.0"
 dependencies = [
  "extism-pdk",
  "gxt",
+ "gxt-extism-types",
  "serde",
+ "serde_cbor",
+ "serde_json",
 ]
 
 [[package]]
@@ -624,6 +627,17 @@ dependencies = [
  "anyhow",
  "clap",
  "gxt",
+ "serde_json",
+]
+
+[[package]]
+name = "gxt-extism-types"
+version = "0.21.0"
+dependencies = [
+ "extism-convert",
+ "gxt",
+ "serde",
+ "serde_cbor",
  "serde_json",
 ]
 

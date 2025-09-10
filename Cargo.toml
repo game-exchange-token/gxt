@@ -12,7 +12,10 @@ repository = "https://github.com/hardliner66/gxt"
 documentation = "https://docs.rs/gxt/latest/gxt/"
 
 [workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
+serde_cbor = "0.11"
+gxt = { version = "0.21.0", path = "gxt" }
 
 [profile.release]
 lto = true
