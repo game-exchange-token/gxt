@@ -11,7 +11,6 @@ readme = "../README.md"
 [dependencies]
 serde_json.workspace = true
 serde_cbor.workspace = true
-getrandom = { version = "0.2.16", features = ["js"] }
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 hex = "0.4"
 serde = { version = "1", features = ["derive"] }

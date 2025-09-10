@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["gxt", "gxt-cli", "gxt-api-c"]
+members = ["gxt", "gxt-cli", "gxt-api-c", "gxt-api-extism"]
 
 [workspace.package]
 edition = "2024"
