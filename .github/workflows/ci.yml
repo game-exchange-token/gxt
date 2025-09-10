@@ -87,7 +87,7 @@ jobs:
           cargo build -p gxt-cli -p gxt-api-c --release
 
           mkdir -p assets/shared
-          mv ./target/release/libgxt_c.so assets/shared/libgxt.so
+          mv ./target/release/libgxt_c.dylib assets/shared/libgxt.dylib
 
           mkdir -p assets/static
           mv ./target/release/libgxt_c.a assets/static/libgxt.a
@@ -128,6 +128,8 @@ jobs:
           mv ./target/release/gxt.h assets/include/
 
           mv ./target/release/gxt.exe assets/
+
+          Compress-Archive -Path assets\* -DestinationPath gxt-win.zip -Force
       - uses: montudor/action-zip@v1
         with:
           args: zip -qq -r gxt-win.zip assets/*
