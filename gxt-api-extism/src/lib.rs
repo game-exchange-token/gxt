@@ -1,5 +1,6 @@
-use extism_pdk::*;
+#![allow(clippy::unnecessary_wraps)]
 
+use extism_pdk::{host_fn, plugin_fn, FnResult};
 use getrandom::Error;
 
 #[host_fn]

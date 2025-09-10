@@ -103,14 +103,15 @@ fn main() -> Result<()> {
 
     match cli.cmd {
         Cmd::Keygen { out } => {
-            let token = gxt::make_key();
-            write_out_string(&token, Some(out.as_ref()))?;
+            let signing_key = gxt::make_key();
+            write_out_string(&signing_key, Some(out.as_ref()))?;
         }
         Cmd::Id { out, key, meta } => {
-            let sk_hex = fs::read_to_string(key)?;
+            let signing_key = fs::read_to_string(key)?;
             let meta_json = value_or_stdin(&meta)?;
-            let token = gxt::make_id_card(&sk_hex, &meta_json)?;
-            write_out_string(&token, out.as_deref())?;
+            let meta = serde_json::from_str(meta_json.trim())?;
+            let id_card = gxt::make_id_card(&signing_key, meta)?;
+            write_out_string(&id_card, out.as_deref())?;
         }
         Cmd::Verify { msg, json } => {
             let token = match (msg.msg, msg.file) {
@@ -118,11 +119,11 @@ fn main() -> Result<()> {
                 (None, Some(file)) => fs::read_to_string(file)?,
                 _ => anyhow::bail!("Nothing to verify"),
             };
-            let rec = gxt::verify_message(&token)?;
+            let envelope = gxt::verify_message(&token)?;
             if json {
-                println!("{}", serde_json::to_string_pretty(&rec)?);
+                println!("{}", serde_json::to_string_pretty(&envelope)?);
             } else {
-                println!("{rec}");
+                println!("{envelope}");
             }
         }
         Cmd::Msg {
@@ -132,24 +133,25 @@ fn main() -> Result<()> {
             body,
             out,
         } => {
-            let sk = fs::read_to_string(key)?;
+            let signing_key = fs::read_to_string(key)?;
             let id_card = fs::read_to_string(to)?;
-            let body = value_or_stdin(&body)?;
-            let tok = gxt::encrypt_message(&sk, &id_card, &body, parent)?;
-            write_out_string(&tok, out.as_deref())?;
+            let body_json = value_or_stdin(&body)?;
+            let body = serde_json::from_str(body_json.trim())?;
+            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, &body, parent)?;
+            write_out_string(&encrypted_message, out.as_deref())?;
         }
         Cmd::Decrypt { key, msg, json } => {
-            let token = match (msg.msg, msg.file) {
+            let encrypted_message = match (msg.msg, msg.file) {
                 (Some(msg), None) => value_or_stdin(&msg)?,
                 (None, Some(file)) => fs::read_to_string(file)?,
                 _ => anyhow::bail!("Nothing to verify"),
             };
-            let sk = fs::read_to_string(key)?;
-            let rec = gxt::decrypt_message(&token, &sk)?;
+            let signing_key = fs::read_to_string(key)?;
+            let envelope = gxt::decrypt_message(&encrypted_message, &signing_key)?;
             if json {
-                println!("{}", serde_json::to_string_pretty(&rec)?);
+                println!("{}", serde_json::to_string_pretty(&envelope)?);
             } else {
-                println!("{rec}");
+                println!("{envelope}");
             }
         }
     }

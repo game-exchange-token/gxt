@@ -73,6 +73,9 @@ gxt keygen --out bob.key
 # Create an id card for bob
 echo '{"name":"Bob"}' | gxt id bob.key --out bob.id --meta -
 
+# Verify if the id card is valid and signed
+gxt verify --file bob.id
+
 # Create a message for bob using their id card and your own key
 gxt msg --key alice.key --to bob.id --out msg_to_bob.gxt --body '{"hello":"world"}'
 

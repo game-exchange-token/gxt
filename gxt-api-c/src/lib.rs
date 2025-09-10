@@ -3,6 +3,7 @@ use std::os::raw::c_char;
 
 const E_RUST_TO_C_STRING: &str = "Could not convert rust string to C string";
 const E_C_TO_RUST_STRING: &str = "Could not convert C string to rust string";
+const E_JSON_PARSE: &str = "Could not serialize output";
 
 /// Creates a new key and returns it as hex string.
 ///
@@ -27,12 +28,11 @@ pub extern "C" fn gxt_make_key() -> *mut c_char {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_make_id_card(key: *const c_char, meta: *const c_char) -> *mut c_char {
     let key = unsafe { CStr::from_ptr(key) };
-    let meta = unsafe { CStr::from_ptr(meta) };
-    let id = gxt::make_id_card(
-        key.to_str().expect(E_C_TO_RUST_STRING),
-        meta.to_str().expect(E_C_TO_RUST_STRING),
-    )
-    .expect("Failed to make identity");
+    let meta_json = unsafe { CStr::from_ptr(meta) };
+    let meta = serde_json::from_str(meta_json.to_str().expect(E_C_TO_RUST_STRING))
+        .expect("Could not parse json");
+    let id = gxt::make_id_card(key.to_str().expect(E_C_TO_RUST_STRING), meta)
+        .expect("Failed to make identity");
     let cstr = CString::new(id).expect(E_RUST_TO_C_STRING);
     cstr.into_raw()
 }
@@ -69,11 +69,13 @@ pub unsafe extern "C" fn gxt_encrypt_message(
 ) -> *mut c_char {
     let key = unsafe { CStr::from_ptr(key) };
     let id_card = unsafe { CStr::from_ptr(id_card) };
-    let body = unsafe { CStr::from_ptr(body) };
+    let body_json = unsafe { CStr::from_ptr(body) };
+    let body =
+        serde_json::from_str(body_json.to_str().expect(E_C_TO_RUST_STRING)).expect(E_JSON_PARSE);
     let msg = gxt::encrypt_message(
         key.to_str().expect(E_C_TO_RUST_STRING),
         id_card.to_str().expect(E_C_TO_RUST_STRING),
-        body.to_str().expect(E_C_TO_RUST_STRING),
+        &body,
         None,
     )
     .expect("Failed to verify message");
@@ -97,12 +99,14 @@ pub unsafe extern "C" fn gxt_encrypt_message_with_parent(
 ) -> *mut c_char {
     let key = unsafe { CStr::from_ptr(key) };
     let id_card = unsafe { CStr::from_ptr(id_card) };
-    let body = unsafe { CStr::from_ptr(body) };
+    let body_json = unsafe { CStr::from_ptr(body) };
     let parent = unsafe { CStr::from_ptr(parent) };
+    let body =
+        serde_json::from_str(body_json.to_str().expect(E_C_TO_RUST_STRING)).expect(E_JSON_PARSE);
     let msg = gxt::encrypt_message(
         key.to_str().expect(E_C_TO_RUST_STRING),
         id_card.to_str().expect(E_C_TO_RUST_STRING),
-        body.to_str().expect(E_C_TO_RUST_STRING),
+        &body,
         Some(parent.to_str().expect(E_C_TO_RUST_STRING).to_string()),
     )
     .expect("Failed to verify message");

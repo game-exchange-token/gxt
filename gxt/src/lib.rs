@@ -25,7 +25,7 @@ use thiserror::Error;
 use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
 
 const PREFIX: &str = "gxt:";
-const SIG_DOMAIN: &[u8] = b"GXT";
+const SIGNATURE_DOMAIN: &[u8] = b"GXT";
 const MAX_RAW: usize = 64 * 1024;
 
 type Bytes32 = [u8; 32];
@@ -120,11 +120,11 @@ impl fmt::Display for PayloadKind {
 /// Represents a decoded token after signature verification and/or decryption.
 pub struct Envelope {
     /// Version
-    pub v: u8,
+    pub version: u8,
     /// Verification Key
-    pub vk: String,
+    pub verification_key: String,
     /// Public Key
-    pub pk: String,
+    pub encryption_key: String,
     /// Payload Kind
     pub kind: PayloadKind,
     /// Opaque Payload
@@ -134,26 +134,36 @@ pub struct Envelope {
     /// Id of this Message
     pub id: String,
     /// Signature of this Message
-    pub sig: String,
+    pub signature: String,
 }
 
 impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "valid   : true")?;
-        writeln!(f, "version : {}", self.v)?;
+        writeln!(f, "valid           : true")?;
+        writeln!(f, "version         : {}", self.version)?;
         writeln!(
             f,
-            "parent  : {}",
+            "parent          : {}",
             self.parent.as_ref().map_or_else(
                 || "-".to_string(),
                 |parent| format!("{} ({})", parent, &parent[..8])
             )
         )?;
-        writeln!(f, "id      : {} ({})", self.id, &self.id[..8])?;
-        writeln!(f, "vk      : {} ({})", self.vk, &self.vk[..8])?;
-        writeln!(f, "pk      : {} ({})", self.pk, &self.pk[..8])?;
-        writeln!(f, "kind    : {}", self.kind)?;
-        writeln!(f, "payload :")?;
+        writeln!(f, "id              : {} ({})", self.id, &self.id[..8])?;
+        writeln!(
+            f,
+            "verification key: {} ({})",
+            self.verification_key,
+            &self.verification_key[..8]
+        )?;
+        writeln!(
+            f,
+            "encryption key  : {} ({})",
+            self.encryption_key,
+            &self.encryption_key[..8]
+        )?;
+        writeln!(f, "kind            : {}", self.kind)?;
+        writeln!(f, "payload:")?;
         writeln!(
             f,
             "{}",
@@ -174,10 +184,14 @@ pub fn make_key() -> String {
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn make_id_card(key: &str, meta: &str) -> Result<String, GxtError> {
+pub fn make_id_card(key: &str, meta: serde_json::Value) -> Result<String, GxtError> {
     let key = parse_key(key.trim())?;
-    let meta: Value = serde_json::from_str(meta.trim())?;
-    make(&key, PayloadKind::Id, meta, None)
+    make(
+        &key,
+        PayloadKind::Id,
+        serde_cbor::value::to_value(meta)?,
+        None,
+    )
 }
 
 /// Verify the signature of a message and return a parsed [`Envelope`].
@@ -186,69 +200,76 @@ pub fn make_id_card(key: &str, meta: &str) -> Result<String, GxtError> {
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
 pub fn verify_message(msg: &str) -> Result<Envelope, GxtError> {
     let raw = decode_message(msg.trim())?;
-    let val: Value = serde_cbor::from_slice(&raw)?;
+    let envelope_cbor: Value = serde_cbor::from_slice(&raw)?;
 
-    let a = match val {
+    let arr = match envelope_cbor {
         Value::Array(a) if a.len() == 8 => a,
         _ => return Err(GxtError::Invalid),
     };
 
-    let mut a = a.into_iter();
+    let mut values = arr.into_iter();
 
-    let v = match a.next() {
+    let version = match values.next() {
         Some(Value::Integer(i)) if i == 1.into() => 1u8,
         _ => return Err(GxtError::Invalid),
     };
-    let vk_bytes = match a.next() {
+    let verification_key_bytes = match values.next() {
         Some(Value::Text(t)) => parse_hex::<32>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let pk = match a.next() {
+    let encryption_key = match values.next() {
         Some(Value::Text(t)) => parse_hex::<32>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let kind = match a.next() {
+    let kind = match values.next() {
         Some(Value::Text(t)) => PayloadKind::from_str(&t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let payload = match a.next() {
+    let payload = match values.next() {
         Some(payload) => payload.clone(),
         _ => return Err(GxtError::Invalid),
     };
-    let parent = match a.next() {
+    let parent = match values.next() {
         Some(Value::Text(t)) if !t.is_empty() => Some(parse_hex::<32>(&t)?),
         Some(Value::Text(_)) => None,
         _ => return Err(GxtError::Invalid),
     };
-    let id = match a.next() {
+    let id = match values.next() {
         Some(Value::Text(t)) => parse_hex::<32>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let sig = match a.next() {
+    let signature_bytes = match values.next() {
         Some(Value::Text(t)) => parse_hex::<64>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
 
-    let b0 = bytes0(&vk_bytes, &pk, kind, payload.clone())?;
-    let expect = blake3::hash(&b0);
+    let canonical = get_canonical_representation(
+        &verification_key_bytes,
+        &encryption_key,
+        kind,
+        payload.clone(),
+    )?;
+    let expect = blake3::hash(&canonical);
     if id != *expect.as_bytes() {
         return Err(GxtError::BadId);
     }
 
-    let vk = VerifyingKey::from_bytes(&vk_bytes).map_err(|_| GxtError::Invalid)?;
-    let sigv = Signature::from_bytes(&sig);
-    vk.verify_strict(&preimage(&b0), &sigv)
+    let verification_key =
+        VerifyingKey::from_bytes(&verification_key_bytes).map_err(|_| GxtError::Invalid)?;
+    let signature = Signature::from_bytes(&signature_bytes);
+    verification_key
+        .verify_strict(&preimage(&canonical), &signature)
         .map_err(|_| GxtError::BadSig)?;
 
     Ok(Envelope {
-        v,
-        vk: hex::encode(vk_bytes),
-        pk: hex::encode(pk),
+        version,
+        verification_key: hex::encode(verification_key_bytes),
+        encryption_key: hex::encode(encryption_key),
         parent: parent.map(hex::encode),
         kind,
         payload,
         id: hex::encode(id),
-        sig: hex::encode(sig),
+        signature: hex::encode(signature_bytes),
     })
 }
 
@@ -260,36 +281,47 @@ pub fn verify_message(msg: &str) -> Result<Envelope, GxtError> {
 pub fn encrypt_message(
     key: &str,
     id_card: &str,
-    body: &str,
+    body: &serde_json::Value,
     parent: Option<String>,
 ) -> Result<String, GxtError> {
     let id_card = verify_message(id_card.trim())?;
-    let pk = parse_hex::<32>(&id_card.pk)?;
+    let their_encryption_key = parse_hex::<32>(&id_card.encryption_key)?;
     let key = parse_key(key.trim())?;
-    let body: Value = serde_json::from_str(body.trim())?;
-    let (my_esk, my_epk) = derive_enc_from_signing(&key);
-    let ekey = enc_derive_key_from_pairs(&my_esk, &pk);
-    let cipher = XChaCha20Poly1305::new(&ekey);
-    let mut n = [0u8; 24];
-    OsRng.fill_bytes(&mut n);
-    let nonce = XNonce::from_slice(&n);
-    let pt = serde_cbor::to_vec(&body)?;
-    let ct = cipher
-        .encrypt(nonce, pt.as_ref())
+    let (my_secret_key, my_encryption_key) = derive_enc_from_signing(&key);
+    let encryption_key = enc_derive_key_from_pairs(&my_secret_key, &their_encryption_key);
+    let cipher = XChaCha20Poly1305::new(&encryption_key);
+    let mut nonce_bytes = [0u8; 24];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = XNonce::from_slice(&nonce_bytes);
+    let plaintext = serde_cbor::to_vec(body)?;
+    let cipher_text = cipher
+        .encrypt(nonce, plaintext.as_ref())
         .map_err(|e| GxtError::Encryption(e.to_string()))?;
 
-    let mut m = std::collections::BTreeMap::new();
-    m.insert(Value::Text("to".into()), Value::Text(hex::encode(pk)));
-    m.insert(Value::Text("from".into()), Value::Text(hex::encode(my_epk)));
-    let mut encm = std::collections::BTreeMap::new();
-    encm.insert(
+    let mut message = std::collections::BTreeMap::new();
+    message.insert(
+        Value::Text("to".into()),
+        Value::Text(hex::encode(their_encryption_key)),
+    );
+    message.insert(
+        Value::Text("from".into()),
+        Value::Text(hex::encode(my_encryption_key)),
+    );
+    let mut encrypted_message = std::collections::BTreeMap::new();
+    encrypted_message.insert(
         Value::Text("alg".into()),
         Value::Text("xchacha20poly1305".into()),
     );
-    encm.insert(Value::Text("n24".into()), Value::Text(hex::encode(n)));
-    encm.insert(Value::Text("ct".into()), Value::Text(hex::encode(&ct)));
-    m.insert(Value::Text("enc".into()), Value::Map(encm));
-    let payload = Value::Map(m);
+    encrypted_message.insert(
+        Value::Text("n24".into()),
+        Value::Text(hex::encode(nonce_bytes)),
+    );
+    encrypted_message.insert(
+        Value::Text("ct".into()),
+        Value::Text(hex::encode(&cipher_text)),
+    );
+    message.insert(Value::Text("enc".into()), Value::Map(encrypted_message));
+    let payload = Value::Map(message);
     make(
         &key,
         PayloadKind::Msg,
@@ -302,11 +334,11 @@ pub fn encrypt_message(
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn decrypt_message(msg: &str, key: &str) -> Result<Envelope, GxtError> {
-    let mut rec = verify_message(msg.trim())?;
+pub fn decrypt_message(message: &str, key: &str) -> Result<Envelope, GxtError> {
+    let mut envelope = verify_message(message.trim())?;
 
     let key = SigningKey::from_bytes(&parse_hex::<32>(key.trim())?);
-    let Value::Map(map) = &rec.payload else {
+    let Value::Map(map) = &envelope.payload else {
         return Err(GxtError::Invalid);
     };
     let to = match map.get(&Value::Text("to".into())) {
@@ -320,69 +352,77 @@ pub fn decrypt_message(msg: &str, key: &str) -> Result<Envelope, GxtError> {
     let Some(Value::Map(encm)) = map.get(&Value::Text("enc".into())) else {
         return Err(GxtError::Invalid);
     };
-    let n = match encm.get(&Value::Text("n24".into())) {
+    let nonce = match encm.get(&Value::Text("n24".into())) {
         Some(Value::Text(t)) => parse_hex::<24>(t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let ct = match encm.get(&Value::Text("ct".into())) {
+    let cipher_text = match encm.get(&Value::Text("ct".into())) {
         Some(Value::Text(t)) => hex::decode(t)?,
         _ => return Err(GxtError::Invalid),
     };
 
-    let (_my_esk, my_epk) = derive_enc_from_signing(&key);
-    if to != my_epk {
+    let (my_secret_key, my_encryption_key) = derive_enc_from_signing(&key);
+    if to != my_encryption_key {
         return Err(GxtError::AccessDenied);
     }
 
-    let (my_esk, _) = derive_enc_from_signing(&key);
-    let key = enc_derive_key_from_pairs(&my_esk, &from);
+    let key = enc_derive_key_from_pairs(&my_secret_key, &from);
     let cipher = XChaCha20Poly1305::new(&key);
-    let nonce = XNonce::from_slice(&n);
-    let pt = cipher
-        .decrypt(nonce, ct.as_ref())
+    let nonce = XNonce::from_slice(&nonce);
+    let plaintext = cipher
+        .decrypt(nonce, cipher_text.as_ref())
         .map_err(|e| GxtError::Encryption(e.to_string()))?;
-    rec.payload = serde_cbor::from_slice(&pt)?;
+    envelope.payload = serde_cbor::from_slice(&plaintext)?;
 
-    Ok(rec)
+    Ok(envelope)
 }
 
 #[allow(clippy::too_many_arguments)]
 fn cbor_array(
-    v: u8,
-    vk: &Bytes32,
-    pk: &Bytes32,
+    version: u8,
+    verification_key: &Bytes32,
+    encryption_key: &Bytes32,
     kind: PayloadKind,
     payload: Value,
     parent: Option<Bytes32>,
     id: Option<&Bytes32>,
-    sig: Option<&Bytes64>,
+    signature: Option<&Bytes64>,
 ) -> Result<Vec<u8>, GxtError> {
-    let arr = Value::Array(vec![
-        Value::Integer(v.into()),
-        Value::Text(hex::encode(vk)),
-        Value::Text(hex::encode(pk)),
+    let envelope_values = Value::Array(vec![
+        Value::Integer(version.into()),
+        Value::Text(hex::encode(verification_key)),
+        Value::Text(hex::encode(encryption_key)),
         Value::Text(kind.to_string()),
         payload,
         Value::Text(parent.map(hex::encode).unwrap_or_default()),
         Value::Text(id.map(hex::encode).unwrap_or_default()),
-        Value::Text(sig.map(hex::encode).unwrap_or_default()),
+        Value::Text(signature.map(hex::encode).unwrap_or_default()),
     ]);
-    Ok(serde_cbor::to_vec(&arr)?)
+    Ok(serde_cbor::to_vec(&envelope_values)?)
 }
 
-fn bytes0(
-    vk: &Bytes32,
-    pk: &Bytes32,
+fn get_canonical_representation(
+    verification_key: &Bytes32,
+    encryption_key: &Bytes32,
     kind: PayloadKind,
     payload: Value,
 ) -> Result<Vec<u8>, GxtError> {
-    cbor_array(1, vk, pk, kind, payload, None, None, None)
+    cbor_array(
+        1,
+        verification_key,
+        encryption_key,
+        kind,
+        payload,
+        None,
+        None,
+        None,
+    )
 }
 
-fn preimage(bytes0: &[u8]) -> Vec<u8> {
-    let mut v = Vec::with_capacity(SIG_DOMAIN.len() + bytes0.len());
-    v.extend_from_slice(SIG_DOMAIN);
-    v.extend_from_slice(bytes0);
+fn preimage(canonical: &[u8]) -> Vec<u8> {
+    let mut v = Vec::with_capacity(SIGNATURE_DOMAIN.len() + canonical.len());
+    v.extend_from_slice(SIGNATURE_DOMAIN);
+    v.extend_from_slice(canonical);
     v
 }
 
@@ -392,86 +432,103 @@ fn make(
     payload: Value,
     parent: Option<Bytes32>,
 ) -> Result<String, GxtError> {
-    let vk = key.verifying_key().to_bytes();
-    let (_, pk) = derive_enc_from_signing(key);
-    let b0 = bytes0(&vk, &pk, kind, payload.clone())?;
-    if b0.len() > MAX_RAW {
+    let verification_key = key.verifying_key().to_bytes();
+    let (_, encryption_key) = derive_enc_from_signing(key);
+    let canonical =
+        get_canonical_representation(&verification_key, &encryption_key, kind, payload.clone())?;
+    if canonical.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }
 
-    let id = blake3::hash(&b0);
-    let sig = key.sign(&preimage(&b0));
+    let id = blake3::hash(&canonical);
+    let signature = key.sign(&preimage(&canonical));
 
     encode_message(
         1,
-        &vk,
-        &pk,
+        &verification_key,
+        &encryption_key,
         kind,
         payload,
         parent,
         id.as_bytes(),
-        &sig.to_bytes(),
+        &signature.to_bytes(),
     )
 }
 
 #[allow(clippy::too_many_arguments)]
 fn encode_message(
-    v: u8,
-    vk: &Bytes32,
-    pk: &Bytes32,
+    version: u8,
+    verification_key: &Bytes32,
+    encryption_key: &Bytes32,
     kind: PayloadKind,
     payload: Value,
     parent: Option<Bytes32>,
     id: &Bytes32,
-    sig: &Bytes64,
+    signature: &Bytes64,
 ) -> Result<String, GxtError> {
-    let cbor = cbor_array(v, vk, pk, kind, payload, parent, Some(id), Some(sig))?;
-    if cbor.len() > MAX_RAW {
+    let envelope_cbor = cbor_array(
+        version,
+        verification_key,
+        encryption_key,
+        kind,
+        payload,
+        parent,
+        Some(id),
+        Some(signature),
+    )?;
+    if envelope_cbor.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }
-    let mut comp = Vec::new();
-    brotli::CompressorWriter::new(&mut comp, 4096, 5, 20).write_all(&cbor)?;
-    Ok(format!("{}{}", PREFIX, bs58::encode(comp).into_string()))
+    let mut compressed_message = Vec::new();
+    brotli::CompressorWriter::new(&mut compressed_message, 4096, 5, 20)
+        .write_all(&envelope_cbor)?;
+    Ok(format!(
+        "{}{}",
+        PREFIX,
+        bs58::encode(compressed_message).into_string()
+    ))
 }
 
 fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
     let rest = message.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
-    let comp = bs58::decode(rest).into_vec()?;
+    let compressed_message = bs58::decode(rest).into_vec()?;
     let mut raw = Vec::new();
-    brotli::Decompressor::new(&comp[..], 4096).read_to_end(&mut raw)?;
+    brotli::Decompressor::new(&compressed_message[..], 4096).read_to_end(&mut raw)?;
     if raw.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }
     Ok(raw)
 }
 
-fn parse_hex<const SIZE: usize>(h: &str) -> Result<[u8; SIZE], GxtError> {
-    let v = hex::decode(h)?;
+fn parse_hex<const SIZE: usize>(hex_string: &str) -> Result<[u8; SIZE], GxtError> {
+    let unsized_hex = hex::decode(hex_string)?;
 
-    let len = v.len();
-    let a: [u8; SIZE] = v.try_into().map_err(|_| GxtError::InvalidHexSize {
-        expected: SIZE,
-        got: len,
-    })?;
-    Ok(a)
+    let got = unsized_hex.len();
+    let hex: [u8; SIZE] = unsized_hex
+        .try_into()
+        .map_err(|_| GxtError::InvalidHexSize {
+            expected: SIZE,
+            got,
+        })?;
+    Ok(hex)
 }
 
-fn parse_key(h: &str) -> Result<SigningKey, GxtError> {
-    Ok(SigningKey::from_bytes(&parse_hex::<32>(h)?))
+fn parse_key(hex_string: &str) -> Result<SigningKey, GxtError> {
+    Ok(SigningKey::from_bytes(&parse_hex::<32>(hex_string)?))
 }
 
 fn derive_enc_from_signing(key: &SigningKey) -> (Bytes32, Bytes32) {
     let seed = key.to_bytes();
-    let dk = blake3::derive_key("GXT-ENC-X25519-FROM-ED25519", &seed);
-    let esk = XSecret::from(dk);
-    let epk = XPublicKey::from(&esk);
-    (esk.to_bytes(), epk.to_bytes())
+    let derived_key = blake3::derive_key("GXT-ENC-X25519-FROM-ED25519", &seed);
+    let secret_key = XSecret::from(derived_key);
+    let encryption_key = XPublicKey::from(&secret_key);
+    (secret_key.to_bytes(), encryption_key.to_bytes())
 }
 
-fn enc_derive_key_from_pairs(my_esk: &Bytes32, their_epk: &Bytes32) -> Key {
-    let key = XSecret::from(*my_esk);
-    let vk = XPublicKey::from(*their_epk);
-    let shared = key.diffie_hellman(&vk);
-    let k = blake3::derive_key("GXT-ENC-XCHACHA20POLY1305", shared.as_bytes());
-    Key::from_slice(&k).to_owned()
+fn enc_derive_key_from_pairs(my_secret_key: &Bytes32, their_encryption_key: &Bytes32) -> Key {
+    let key = XSecret::from(*my_secret_key);
+    let verification_key = XPublicKey::from(*their_encryption_key);
+    let shared = key.diffie_hellman(&verification_key);
+    let derived_key = blake3::derive_key("GXT-ENC-XCHACHA20POLY1305", shared.as_bytes());
+    Key::from_slice(&derived_key).to_owned()
 }
