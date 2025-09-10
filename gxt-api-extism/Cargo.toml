@@ -19,4 +19,4 @@ serde.workspace = true
 serde_json.workspace = true
 serde_cbor.workspace = true
 extism-pdk = "1.3.0"
-gxt-extism-types = { version = "0.25.0", path = "../gxt-extism-types" }
+gxt-extism-types = { version = "0.26.0", path = "../gxt-extism-types" }
