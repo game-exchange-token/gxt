@@ -130,9 +130,6 @@ jobs:
           mv ./target/release/gxt.exe assets/
 
           Compress-Archive -Path assets\* -DestinationPath gxt-win.zip -Force
-      - uses: montudor/action-zip@v1
-        with:
-          args: zip -qq -r gxt-win.zip assets/*
 
       - name: Upload release
         id: upload-release-windows
