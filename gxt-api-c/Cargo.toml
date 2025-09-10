@@ -13,7 +13,7 @@ name = "gxt_c"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-gxt = { version = "0.16.0", path = "../gxt" }
+gxt = { version = "0.17.0", path = "../gxt" }
 serde_json.workspace = true
 
 [build-dependencies]
