@@ -601,7 +601,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-api-c"
-version = "0.26.0"
+version = "0.25.0"
 dependencies = [
  "cbindgen",
  "gxt",
@@ -622,7 +622,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-cli"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "anyhow",
  "clap",
