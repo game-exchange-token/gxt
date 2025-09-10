@@ -31,7 +31,7 @@ jobs:
 
       - name: Create release
         id: create_release
-        uses: "softprops/action-gh-release@v1"
+        uses: "softprops/action-gh-release@v2"
         with:
           draft: false
           prerelease: false
@@ -54,12 +54,12 @@ jobs:
 
       - name: Upload release
         id: upload-release-linux
-        uses: alexellis/upload-assets@0.2.3
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: ./target/release/gxc-linux
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_paths: '["./target/release/gxc-linux"]'
 
   build-macos:
     runs-on: macos-latest
@@ -77,14 +77,13 @@ jobs:
           mv ./target/release/gxc ./target/release/gxc-macos
 
       - name: Upload release
-        id: upload-release-linux
-        uses: alexellis/upload-assets@0.2.3
+        id: upload-release-macos
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: ./target/release/gxc-macos
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_paths: '["./target/release/gxc-macos"]'
-
   build-windows:
     runs-on: windows-2019
     needs: release
@@ -100,9 +99,9 @@ jobs:
 
       - name: Upload release
         id: upload-release-windows
-        uses: alexellis/upload-assets@0.2.3
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: ./target/release/gxc.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_paths: '["./target/release/gxc.exe"]'
