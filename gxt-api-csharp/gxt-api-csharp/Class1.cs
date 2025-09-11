@@ -11,7 +11,7 @@ namespace gxt_csharp
         static GxtWasm()
         {
             byte[] buffer;
-            using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("gxt.wasm"))
+            using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("gxt.wasm")!)
             {
                 buffer = new byte[(int)s.Length];
                 s.Read(buffer, 0, (int)s.Length);
