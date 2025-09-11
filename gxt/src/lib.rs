@@ -24,7 +24,7 @@ use serde_cbor::Value;
 use thiserror::Error;
 use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
 
-pub use serde_json::{json, to_value};
+pub use serde_json::{from_value, json, to_value};
 
 const PREFIX: &str = "gxt:";
 const SIGNATURE_DOMAIN: &[u8] = b"GXT";
