@@ -48,7 +48,7 @@ pub unsafe extern "C" fn gxt_make_id_card(key: *const c_char, meta: *const c_cha
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxt_verify_message(msg: *const c_char) -> *mut c_char {
     let msg = unsafe { CStr::from_ptr(msg) };
-    let rec = gxt::verify_message<Value>(msg.to_str().expect(E_C_TO_RUST_STRING))
+    let rec = gxt::verify_message::<serde_json::Value>(msg.to_str().expect(E_C_TO_RUST_STRING))
         .expect("Failed to verify message");
     let cstr = CString::new(serde_json::to_string(&rec).expect("Could not serialize output"))
         .expect(E_RUST_TO_C_STRING);
@@ -129,7 +129,7 @@ pub unsafe extern "C" fn gxt_decrypt_message(
 ) -> *mut c_char {
     let msg = unsafe { CStr::from_ptr(msg) };
     let key = unsafe { CStr::from_ptr(key) };
-    let rec = gxt::decrypt_message(
+    let rec = gxt::decrypt_message::<serde_json::Value>(
         msg.to_str().expect(E_C_TO_RUST_STRING),
         key.to_str().expect(E_C_TO_RUST_STRING),
     )
