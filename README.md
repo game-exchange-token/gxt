@@ -6,7 +6,6 @@ For details check out [`spec.md`](https://github.com/hardliner66/gxt/blob/main/s
 
 - [Rationale](#rationale)
 - [About](#about)
-- [C API](#c-api)
 - [Install](#install)
 - [Demo](#demo)
 - [CLI](#cli)
@@ -16,6 +15,9 @@ For details check out [`spec.md`](https://github.com/hardliner66/gxt/blob/main/s
   - [Verify](#verify)
   - [Msg](#msg)
   - [Decrypt](#decrypt)
+- [C API](#c-api)
+- [Extism API](#extism-api)
+- [C# API](#c-api-1)
 
 ## Rationale
 I was thinking about how it could be possible to add trading
@@ -43,21 +45,8 @@ from encryption.
 The size of the token before encoding is limited to 64KB.
 
 Because this is intended to be easy to integrate by mod authors, a library and cli are provided.
-Both are written in rust. There is also a wrapper that exposes a C API called `gxt-api-c`.
-The library can also compile to wasm, making it possible to use this in a web context.
-
-## C API
-To use the C API, clone the repository and then build the crate `gxt-api-c`.
-This will create a dynamic and a static library, as well as the corresponding include header,
-inside the target directory.
-
-```bash
-git clone https://github.com/hardliner66/gxt
-cd gxt
-cargo build -p gxt-api-c --release
-cd target/release
-ls
-```
+Both are written in rust. There is also a wrapper that exposes a C API called `gxt-api-c`, a wrapper that provides
+the API as an [Extism](https://extism.org/) plugin and a C# wrapper (based on Extism).
 
 ## Install
 ```bash
@@ -131,7 +120,7 @@ Arguments:
   <KEY>  The key of the person creating the id card
 
 Options:
-  -m, --meta <META>  Meta data for the id card. Can be anything, but must be set. Pass - to read from stdin    
+  -m, --meta <META>  Meta data for the id card. Can be anything, but must be set. Pass - to read from stdin
   -o, --out <OUT>    Where to store the id card token
   -h, --help         Print help
 ```
@@ -159,7 +148,7 @@ Options:
   -k, --key <KEY>        The key of the sender
   -t, --to <TO>          The id card of the recipient
   -p, --parent <PARENT>  The parent of this message
-  -b, --body <BODY>      The body of the message. Can be anything, but must be set. Pass - to read from stdin  
+  -b, --body <BODY>      The body of the message. Can be anything, but must be set. Pass - to read from stdin
   -o, --out <OUT>        Where to store the message token
   -h, --help             Print help
 ```
@@ -177,3 +166,23 @@ Options:
   -j, --json         Print output as json
   -h, --help         Print help
 ```
+
+## C API
+To use the C API, clone the repository and then build the crate `gxt-api-c`.
+This will create a dynamic and a static library, as well as the corresponding include header,
+inside the target directory.
+
+```bash
+git clone https://github.com/hardliner66/gxt
+cd gxt
+cargo build -p gxt-api-c --release
+cd target/release
+ls
+```
+
+## Extism API
+By exposing the API as an Extism plugin its possible to use the library in every language that is supported
+as a host language by Extism.
+
+## C# API
+Ready to use C# DLL, which loads the library through Extism, so we don't have to deploy the native library.

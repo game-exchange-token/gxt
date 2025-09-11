@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35728.132
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gxt-api-csharp", "gxt-api-csharp\gxt-api-csharp.csproj", "{F46DC171-A83F-4074-A1E4-584D6B0FFD2C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test-app", "test-app\test-app.csproj", "{F66B8117-0E7B-4652-8142-C7364F848154}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F46DC171-A83F-4074-A1E4-584D6B0FFD2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F46DC171-A83F-4074-A1E4-584D6B0FFD2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F46DC171-A83F-4074-A1E4-584D6B0FFD2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F46DC171-A83F-4074-A1E4-584D6B0FFD2C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F66B8117-0E7B-4652-8142-C7364F848154}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F66B8117-0E7B-4652-8142-C7364F848154}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F66B8117-0E7B-4652-8142-C7364F848154}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F66B8117-0E7B-4652-8142-C7364F848154}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

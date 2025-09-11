@@ -3,8 +3,6 @@
 use extism_convert::*;
 use serde::{Deserialize, Serialize};
 
-pub use serde_json::{json, to_value};
-
 #[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
 pub struct IdCardRequest {

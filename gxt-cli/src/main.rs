@@ -74,9 +74,9 @@ enum Cmd {
         #[arg(short, long)]
         parent: Option<String>,
 
-        /// The body of the message. Can be anything, but must be set. Pass - to read from stdin
+        /// The payload of the message. Can be anything, but must be set. Pass - to read from stdin
         #[arg(short, long)]
-        body: String,
+        payload: String,
 
         /// Where to store the message token
         #[arg(short, long)]
@@ -130,14 +130,14 @@ fn main() -> Result<()> {
             key,
             to,
             parent,
-            body,
+            payload,
             out,
         } => {
             let signing_key = fs::read_to_string(key)?;
             let id_card = fs::read_to_string(to)?;
-            let body_json = value_or_stdin(&body)?;
-            let body = serde_json::from_str(body_json.trim())?;
-            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, &body, parent)?;
+            let payload_json = value_or_stdin(&payload)?;
+            let payload = serde_json::from_str(payload_json.trim())?;
+            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, &payload, parent)?;
             write_out_string(&encrypted_message, out.as_deref())?;
         }
         Cmd::Decrypt { key, msg, json } => {
