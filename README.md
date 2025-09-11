@@ -66,7 +66,7 @@ echo '{"name":"Bob"}' | gxt id bob.key --out bob.id --meta -
 gxt verify --file bob.id
 
 # Create a message for bob using their id card and your own key
-gxt msg --key alice.key --to bob.id --out msg_to_bob.gxt --body '{"hello":"world"}'
+gxt msg --key alice.key --to bob.id --out msg_to_bob.gxt --payload '{"hello":"world"}'
 
 # Verify if the message is valid and signed
 gxt verify --file msg_to_bob.gxt
@@ -142,15 +142,15 @@ Options:
 ```txt
 Create an encrypted message
 
-Usage: gxt msg [OPTIONS] --key <KEY> --to <TO> --body <BODY>
+Usage: gxt msg [OPTIONS] --key <KEY> --to <TO> --payload <PAYLOAD>
 
 Options:
-  -k, --key <KEY>        The key of the sender
-  -t, --to <TO>          The id card of the recipient
-  -p, --parent <PARENT>  The parent of this message
-  -b, --body <BODY>      The body of the message. Can be anything, but must be set. Pass - to read from stdin
-  -o, --out <OUT>        Where to store the message token
-  -h, --help             Print help
+  -k, --key <KEY>         The key of the sender
+  -t, --to <TO>           The id card of the recipient
+  -p, --parent <PARENT>   The parent of this message
+  --payload <PAYLOAD> The payload of the message. Can be anything, but must be set. Pass - to read from stdin
+  -o, --out <OUT>         Where to store the message token
+  -h, --help              Print help
 ```
 
 ### Decrypt

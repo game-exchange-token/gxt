@@ -71,7 +71,7 @@ enum Cmd {
         to: PathBuf,
 
         /// The parent of this message
-        #[arg(short, long)]
+        #[arg(long)]
         parent: Option<String>,
 
         /// The payload of the message. Can be anything, but must be set. Pass - to read from stdin
@@ -109,7 +109,7 @@ fn main() -> Result<()> {
         Cmd::Id { out, key, meta } => {
             let signing_key = fs::read_to_string(key)?;
             let meta_json = value_or_stdin(&meta)?;
-            let meta = serde_json::from_str(meta_json.trim())?;
+            let meta: serde_json::Value = serde_json::from_str(meta_json.trim())?;
             let id_card = gxt::make_id_card(&signing_key, meta)?;
             write_out_string(&id_card, out.as_deref())?;
         }
@@ -119,7 +119,7 @@ fn main() -> Result<()> {
                 (None, Some(file)) => fs::read_to_string(file)?,
                 _ => anyhow::bail!("Nothing to verify"),
             };
-            let envelope = gxt::verify_message(&token)?;
+            let envelope = gxt::verify_message::<serde_json::Value>(&token)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&envelope)?);
             } else {
@@ -136,8 +136,8 @@ fn main() -> Result<()> {
             let signing_key = fs::read_to_string(key)?;
             let id_card = fs::read_to_string(to)?;
             let payload_json = value_or_stdin(&payload)?;
-            let payload = serde_json::from_str(payload_json.trim())?;
-            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, &payload, parent)?;
+            let payload: serde_json::Value = serde_json::from_str(payload_json.trim())?;
+            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, payload, parent)?;
             write_out_string(&encrypted_message, out.as_deref())?;
         }
         Cmd::Decrypt { key, msg, json } => {
@@ -147,7 +147,8 @@ fn main() -> Result<()> {
                 _ => anyhow::bail!("Nothing to verify"),
             };
             let signing_key = fs::read_to_string(key)?;
-            let envelope = gxt::decrypt_message(&encrypted_message, &signing_key)?;
+            let envelope =
+                gxt::decrypt_message::<serde_json::Value>(&encrypted_message, &signing_key)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&envelope)?);
             } else {

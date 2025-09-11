@@ -34,7 +34,7 @@ Write-Output '{"name":"Bob"}' | gxt id tmp/bob.key --out tmp/bob.id --meta -
 gxt verify --file tmp/bob.id
 
 # Create a message for bob using their id card and your own key
-gxt msg --key tmp/alice.key --to tmp/bob.id --out tmp/msg_to_bob.gxt --body '{"hello":"world"}'
+gxt msg --key tmp/alice.key --to tmp/bob.id --out tmp/msg_to_bob.gxt --payload '{"hello":"world"}'
 
 # Verify if the message is valid and signed
 gxt verify --file tmp/msg_to_bob.gxt

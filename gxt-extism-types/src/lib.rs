@@ -1,7 +1,7 @@
 #![allow(clippy::unnecessary_wraps)]
 
 use extism_convert::*;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 #[derive(Clone, Debug, FromBytes, Deserialize, Serialize, ToBytes)]
 #[encoding(Json)]
@@ -39,7 +39,7 @@ pub struct Envelope {
     pub signature: String,
 }
 
-impl From<gxt::Envelope> for Envelope {
+impl<P: Serialize + DeserializeOwned> From<gxt::Envelope<P>> for Envelope {
     fn from(
         gxt::Envelope {
             version,
@@ -50,14 +50,14 @@ impl From<gxt::Envelope> for Envelope {
             parent,
             id,
             signature,
-        }: gxt::Envelope,
+        }: gxt::Envelope<P>,
     ) -> Self {
         Envelope {
             version,
             verification_key,
             encryption_key,
             kind: kind.into(),
-            payload: serde_cbor::value::from_value(payload)
+            payload: serde_json::to_value(payload)
                 .expect("Could not convert payload from JSON to CBOR"),
             parent,
             id,
@@ -71,7 +71,7 @@ impl From<gxt::Envelope> for Envelope {
 pub struct EncryptRequest {
     pub key: String,
     pub id_card: String,
-    pub body: serde_json::Value,
+    pub payload: serde_json::Value,
     pub parent: Option<String>,
 }
 

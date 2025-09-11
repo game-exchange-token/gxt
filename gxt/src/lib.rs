@@ -19,7 +19,7 @@ use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use rand::RngCore;
 use rand::rngs::OsRng;
-use serde::Serialize;
+use serde::{Serialize, de::DeserializeOwned};
 use serde_cbor::Value;
 use thiserror::Error;
 use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
@@ -120,7 +120,7 @@ impl fmt::Display for PayloadKind {
 /// Parsed, verified GXT record.
 ///
 /// Represents a decoded token after signature verification and/or decryption.
-pub struct Envelope {
+pub struct Envelope<P: Serialize + DeserializeOwned> {
     /// Version
     pub version: u8,
     /// Verification Key
@@ -130,7 +130,7 @@ pub struct Envelope {
     /// Payload Kind
     pub kind: PayloadKind,
     /// Opaque Payload
-    pub payload: Value,
+    pub payload: P,
     /// Id of the Parent Message
     pub parent: Option<String>,
     /// Id of this Message
@@ -139,7 +139,7 @@ pub struct Envelope {
     pub signature: String,
 }
 
-impl fmt::Display for Envelope {
+impl<P: Serialize + DeserializeOwned> fmt::Display for Envelope<P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "valid           : true")?;
         writeln!(f, "version         : {}", self.version)?;
@@ -186,7 +186,10 @@ pub fn make_key() -> String {
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn make_id_card(key: &str, meta: serde_json::Value) -> Result<String, GxtError> {
+pub fn make_id_card<M: Serialize + DeserializeOwned>(
+    key: &str,
+    meta: M,
+) -> Result<String, GxtError> {
     let key = parse_key(key.trim())?;
     make(
         &key,
@@ -200,7 +203,7 @@ pub fn make_id_card(key: &str, meta: serde_json::Value) -> Result<String, GxtErr
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn verify_message(msg: &str) -> Result<Envelope, GxtError> {
+pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Envelope<P>, GxtError> {
     let raw = decode_message(msg.trim())?;
     let envelope_cbor: Value = serde_cbor::from_slice(&raw)?;
 
@@ -269,7 +272,7 @@ pub fn verify_message(msg: &str) -> Result<Envelope, GxtError> {
         encryption_key: hex::encode(encryption_key),
         parent: parent.map(hex::encode),
         kind,
-        payload,
+        payload: serde_cbor::value::from_value(payload)?,
         id: hex::encode(id),
         signature: hex::encode(signature_bytes),
     })
@@ -280,13 +283,13 @@ pub fn verify_message(msg: &str) -> Result<Envelope, GxtError> {
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn encrypt_message(
+pub fn encrypt_message<P: Serialize + DeserializeOwned>(
     key: &str,
     id_card: &str,
-    body: &serde_json::Value,
+    payload: P,
     parent: Option<String>,
 ) -> Result<String, GxtError> {
-    let id_card = verify_message(id_card.trim())?;
+    let id_card = verify_message::<Value>(id_card.trim())?;
     let their_encryption_key = parse_hex::<32>(&id_card.encryption_key)?;
     let key = parse_key(key.trim())?;
     let (my_secret_key, my_encryption_key) = derive_enc_from_signing(&key);
@@ -295,7 +298,7 @@ pub fn encrypt_message(
     let mut nonce_bytes = [0u8; 24];
     OsRng.fill_bytes(&mut nonce_bytes);
     let nonce = XNonce::from_slice(&nonce_bytes);
-    let plaintext = serde_cbor::to_vec(body)?;
+    let plaintext = serde_cbor::to_vec(&payload)?;
     let cipher_text = cipher
         .encrypt(nonce, plaintext.as_ref())
         .map_err(|e| GxtError::Encryption(e.to_string()))?;
@@ -336,8 +339,11 @@ pub fn encrypt_message(
 ///
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
-pub fn decrypt_message(message: &str, key: &str) -> Result<Envelope, GxtError> {
-    let mut envelope = verify_message(message.trim())?;
+pub fn decrypt_message<P: Serialize + DeserializeOwned>(
+    message: &str,
+    key: &str,
+) -> Result<Envelope<P>, GxtError> {
+    let mut envelope = verify_message::<Value>(message.trim())?;
 
     let key = SigningKey::from_bytes(&parse_hex::<32>(key.trim())?);
     let Value::Map(map) = &envelope.payload else {
@@ -376,7 +382,16 @@ pub fn decrypt_message(message: &str, key: &str) -> Result<Envelope, GxtError> {
         .map_err(|e| GxtError::Encryption(e.to_string()))?;
     envelope.payload = serde_cbor::from_slice(&plaintext)?;
 
-    Ok(envelope)
+    Ok(Envelope {
+        version: envelope.version,
+        verification_key: envelope.verification_key,
+        encryption_key: envelope.encryption_key,
+        kind: envelope.kind,
+        payload: serde_cbor::value::from_value(envelope.payload)?,
+        parent: envelope.parent,
+        id: envelope.id,
+        signature: envelope.signature,
+    })
 }
 
 #[allow(clippy::too_many_arguments)]

@@ -36,7 +36,7 @@ namespace gxt_csharp
     {
         public string key;
         public string id_card;
-        public T body;
+        public T payload;
         public string? parent;
     }
 
@@ -84,9 +84,9 @@ namespace gxt_csharp
             return JsonConvert.DeserializeObject<Envelope<T>>(GxtWasm.Call("verify_message", message)!);
         }
 
-        public static string EncryptMessage<T>(string key, string id_card, T body, string? parent = null)
+        public static string EncryptMessage<T>(string key, string id_card, T payload, string? parent = null)
         {
-            var req = new EncryptRequest<T> { key = key, id_card = id_card, body = body, parent = parent };
+            var req = new EncryptRequest<T> { key = key, id_card = id_card, payload = payload, parent = parent };
             return GxtWasm.Call("encrypt_message", JsonConvert.SerializeObject(req))!;
         }
 

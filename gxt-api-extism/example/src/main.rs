@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
         ENCRYPT_MESSAGE_IN {
             key: alice,
             id_card: bobs_id_card,
-            body: json!({"trade": {"type": "sword", "amount": 5}}),
+            payload: json!({"trade": {"type": "sword", "amount": 5}}),
             parent: None,
         },
     )?;

@@ -12,12 +12,12 @@ Console.WriteLine("Bobs ID Card:");
 Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(vEnvelope1, Newtonsoft.Json.Formatting.Indented));
 Console.WriteLine();
 
-var encryptedMessage = Gxt.EncryptMessage(alice, bobsIdCard, new Body { hello = "world" });
+var encryptedMessage = Gxt.EncryptMessage(alice, bobsIdCard, new Payload { hello = "world" });
 Console.WriteLine("Encrypted Message for Bob:");
 Console.WriteLine(encryptedMessage);
 Console.WriteLine();
 
-var envelope = Gxt.DecryptMessage<Body>(encryptedMessage, bob);
+var envelope = Gxt.DecryptMessage<Payload>(encryptedMessage, bob);
 Console.WriteLine("Decrypted Message for Bob:");
 Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(envelope, Newtonsoft.Json.Formatting.Indented)); ;
 Console.WriteLine();
@@ -27,7 +27,7 @@ struct Meta
     public string name;
 }
 
-struct Body
+struct Payload
 {
     public string hello;
 }
