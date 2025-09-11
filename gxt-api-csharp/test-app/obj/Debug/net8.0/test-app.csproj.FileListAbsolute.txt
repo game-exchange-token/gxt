@@ -11,7 +11,6 @@ C:\projects\gxt\gxt-api-csharp\test-app\bin\Debug\net8.0\runtimes\osx-arm64\nati
 C:\projects\gxt\gxt-api-csharp\test-app\bin\Debug\net8.0\runtimes\osx-x64\native\libextism.dylib
 C:\projects\gxt\gxt-api-csharp\test-app\bin\Debug\net8.0\runtimes\win-x64\native\extism.dll
 C:\projects\gxt\gxt-api-csharp\test-app\bin\Debug\net8.0\gxt-api-csharp.dll
-C:\projects\gxt\gxt-api-csharp\test-app\bin\Debug\net8.0\gxt-api-csharp.pdb
 C:\projects\gxt\gxt-api-csharp\test-app\obj\Debug\net8.0\test-app.csproj.AssemblyReference.cache
 C:\projects\gxt\gxt-api-csharp\test-app\obj\Debug\net8.0\test-app.GeneratedMSBuildEditorConfig.editorconfig
 C:\projects\gxt\gxt-api-csharp\test-app\obj\Debug\net8.0\test-app.AssemblyInfoInputs.cache

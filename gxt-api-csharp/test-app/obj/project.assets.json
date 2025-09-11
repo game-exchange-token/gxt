@@ -79,6 +79,20 @@
           "Microsoft.NETCore.App"
         ]
       },
+      "gxt-csharp/1.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Extism.Sdk": "1.9.1",
+          "Extism.runtime.all": "1.12.0",
+          "Newtonsoft.Json": "13.0.3"
+        },
+        "compile": {
+          "lib/net8.0/gxt-api-csharp.dll": {}
+        },
+        "runtime": {
+          "lib/net8.0/gxt-api-csharp.dll": {}
+        }
+      },
       "Newtonsoft.Json/13.0.3": {
         "type": "package",
         "compile": {
@@ -90,21 +104,6 @@
           "lib/net6.0/Newtonsoft.Json.dll": {
             "related": ".xml"
           }
-        }
-      },
-      "gxt-csharp/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v8.0",
-        "dependencies": {
-          "Extism.Sdk": "1.9.1",
-          "Extism.runtime.all": "1.12.0",
-          "Newtonsoft.Json": "13.0.3"
-        },
-        "compile": {
-          "bin/placeholder/gxt-csharp.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/gxt-csharp.dll": {}
         }
       }
     }
@@ -215,6 +214,19 @@
         "lib/netstandard2.1/Extism.Sdk.dll"
       ]
     },
+    "gxt-csharp/1.0.0": {
+      "sha512": "9CpkN/g5uYAyP0/FWnoLhjT0g2We4NSffY2xselWpUf3kb6c8m7G6Jt6zeec4B2+4I81i5v+7U/Ez9Hh3P3qhg==",
+      "type": "package",
+      "path": "gxt-csharp/1.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "gxt-csharp.1.0.0.nupkg.sha512",
+        "gxt-csharp.nuspec",
+        "lib/net8.0/gxt-api-csharp.dll"
+      ]
+    },
     "Newtonsoft.Json/13.0.3": {
       "sha512": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ==",
       "type": "package",
@@ -244,11 +256,6 @@
         "newtonsoft.json.nuspec",
         "packageIcon.png"
       ]
-    },
-    "gxt-csharp/1.0.0": {
-      "type": "project",
-      "path": "../gxt-api-csharp/gxt-api-csharp.csproj",
-      "msbuildProject": "../gxt-api-csharp/gxt-api-csharp.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -287,11 +294,7 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
-          "projectReferences": {
-            "C:\\projects\\gxt\\gxt-api-csharp\\gxt-api-csharp\\gxt-api-csharp.csproj": {
-              "projectPath": "C:\\projects\\gxt\\gxt-api-csharp\\gxt-api-csharp\\gxt-api-csharp.csproj"
-            }
-          }
+          "projectReferences": {}
         }
       },
       "warningProperties": {
@@ -309,6 +312,12 @@
     "frameworks": {
       "net8.0": {
         "targetAlias": "net8.0",
+        "dependencies": {
+          "gxt-csharp": {
+            "target": "Package",
+            "version": "[1.0.0, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

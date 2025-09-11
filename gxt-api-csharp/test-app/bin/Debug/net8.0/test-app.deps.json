@@ -8,7 +8,7 @@
     ".NETCoreApp,Version=v8.0": {
       "test-app/1.0.0": {
         "dependencies": {
-          "gxt-api-csharp": "1.0.0"
+          "gxt-csharp": "1.0.0"
         },
         "runtime": {
           "test-app.dll": {}
@@ -86,24 +86,24 @@
           }
         }
       },
-      "Newtonsoft.Json/13.0.3": {
-        "runtime": {
-          "lib/net6.0/Newtonsoft.Json.dll": {
-            "assemblyVersion": "13.0.0.0",
-            "fileVersion": "13.0.3.27908"
-          }
-        }
-      },
-      "gxt-api-csharp/1.0.0": {
+      "gxt-csharp/1.0.0": {
         "dependencies": {
           "Extism.Sdk": "1.9.1",
           "Extism.runtime.all": "1.12.0",
           "Newtonsoft.Json": "13.0.3"
         },
         "runtime": {
-          "gxt-api-csharp.dll": {
-            "assemblyVersion": "1.0.0",
+          "lib/net8.0/gxt-api-csharp.dll": {
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Newtonsoft.Json/13.0.3": {
+        "runtime": {
+          "lib/net6.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.3.27908"
           }
         }
       }
@@ -171,17 +171,19 @@
       "path": "extism.sdk/1.9.1",
       "hashPath": "extism.sdk.1.9.1.nupkg.sha512"
     },
+    "gxt-csharp/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-9CpkN/g5uYAyP0/FWnoLhjT0g2We4NSffY2xselWpUf3kb6c8m7G6Jt6zeec4B2+4I81i5v+7U/Ez9Hh3P3qhg==",
+      "path": "gxt-csharp/1.0.0",
+      "hashPath": "gxt-csharp.1.0.0.nupkg.sha512"
+    },
     "Newtonsoft.Json/13.0.3": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ==",
       "path": "newtonsoft.json/13.0.3",
       "hashPath": "newtonsoft.json.13.0.3.nupkg.sha512"
-    },
-    "gxt-api-csharp/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
     }
   }
 }

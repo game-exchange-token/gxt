@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\gxt-api-csharp\gxt-api-csharp.csproj" />
+    <PackageReference Include="gxt-csharp" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
