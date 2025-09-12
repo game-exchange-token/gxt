@@ -25,6 +25,7 @@ axum = "0.7"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 thiserror = "1"
 blake3 = "1.8.2"
+reqwest = "0.12.23"
 
 [[bin]]
 name = "gxt"

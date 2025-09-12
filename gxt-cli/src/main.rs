@@ -3,7 +3,7 @@
 mod server;
 
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use std::{
     fs,
     io::{self, Read, Write},
@@ -28,6 +28,12 @@ pub struct MsgInput {
     /// The path to the encrypted message
     #[arg(short, long)]
     file: Option<PathBuf>,
+}
+
+#[derive(Clone, ValueEnum)]
+enum TimelockType {
+    Public,
+    Private,
 }
 
 #[derive(Subcommand)]
@@ -109,6 +115,52 @@ enum Cmd {
         #[arg(short, long)]
         key: PathBuf,
     },
+
+    /// Get public timelock key
+    PublicTimelock {
+        /// The ip and port of the server
+        host: String,
+
+        /// The id card of the recipient
+        #[arg(short, long)]
+        to: PathBuf,
+
+        /// The date and time at which the private timelock key should
+        /// become available
+        #[arg(short, long)]
+        timestamp: String,
+
+        /// A label assigned to the timelock
+        #[arg(short, long)]
+        label: String,
+
+        /// Where to store the id card for the timelock
+        #[arg(short, long)]
+        out: PathBuf,
+    },
+
+    /// Get private timelock key
+    PrivateTimelock {
+        /// The ip and port of the server
+        host: String,
+
+        /// The id card of the recipient
+        #[arg(short, long)]
+        to: PathBuf,
+
+        /// The date and time at which the private timelock key should
+        /// become available
+        #[arg(short, long)]
+        timestamp: String,
+
+        /// A label assigned to the timelock
+        #[arg(short, long)]
+        label: String,
+
+        /// Where to store the id card for the timelock
+        #[arg(short, long)]
+        out: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -176,6 +228,45 @@ async fn main() -> Result<()> {
 
         Cmd::Serve { listen, key } => {
             server::serve(listen, key).await?;
+        }
+
+        Cmd::PublicTimelock {
+            host,
+            to,
+            timestamp,
+            label,
+            out,
+        } => {
+            let id_card = fs::read_to_string(to)?;
+            let timelock_card = reqwest::Client::new()
+                .get(format!(
+                    "http://{host}/v1/tlock/public?timestamp={timestamp}&label={label}"
+                ))
+                .header("id_card", id_card)
+                .send()
+                .await?
+                .text()
+                .await?;
+            write_out_string(&timelock_card, Some(out.as_ref()))?;
+        }
+        Cmd::PrivateTimelock {
+            host,
+            to,
+            timestamp,
+            label,
+            out,
+        } => {
+            let id_card = fs::read_to_string(to)?;
+            let timelock_card = reqwest::Client::new()
+                .get(format!(
+                    "http://{host}/v1/tlock/private?timestamp={timestamp}&label={label}"
+                ))
+                .header("id_card", id_card)
+                .send()
+                .await?
+                .text()
+                .await?;
+            write_out_string(&timelock_card, Some(out.as_ref()))?;
         }
     }
 

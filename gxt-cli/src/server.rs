@@ -98,21 +98,21 @@ async fn get_public(
     let _ =
         parse_timestamp(&query.timestamp).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
-    let encryption_key = headers
-        .get("encryption_key")
+    let id_card = headers
+        .get("id_card")
         .ok_or_else(|| (StatusCode::BAD_REQUEST, "Bad Request".to_string()))?;
+    let envelope = gxt::verify_message::<serde_json::Value>(
+        id_card
+            .to_str()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+    )
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let timelock = PublicTimelock {
         timestamp: query.timestamp,
         label: query.label,
     };
-    let secret_key = derive_timelock_x25519(
-        &state.key,
-        &timelock,
-        encryption_key
-            .to_str()
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
-    );
+    let secret_key = derive_timelock_x25519(&state.key, &timelock, &envelope.encryption_key);
 
     let id_card = gxt::make_id_card(hex::encode(secret_key.as_bytes()).as_str(), timelock)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
