@@ -31,12 +31,18 @@ pub struct PrivateTimelock {
     pub secret_key: String,
 }
 
-pub fn derive_timelock_x25519(master_secret: &[u8; 32], tl: &PublicTimelock) -> X25519Secret {
+pub fn derive_timelock_x25519(
+    master_secret: &[u8; 32],
+    tl: &PublicTimelock,
+    encryption_key: &str,
+) -> X25519Secret {
     let ctx = [
         b"T=" as &[u8],
         tl.timestamp.as_bytes(),
         b"|L=",
         tl.label.as_bytes(),
+        b"|E=",
+        encryption_key.as_bytes(),
     ]
     .concat();
 
@@ -86,16 +92,27 @@ fn parse_timestamp(timestamp: &str) -> Result<OffsetDateTime, ApiErr> {
 
 async fn get_public(
     State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
     Query(query): Query<PublicQuery>,
 ) -> Result<String, (StatusCode, String)> {
     let _ =
         parse_timestamp(&query.timestamp).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
+    let encryption_key = headers
+        .get("encryption_key")
+        .ok_or_else(|| (StatusCode::BAD_REQUEST, "Bad Request".to_string()))?;
+
     let timelock = PublicTimelock {
         timestamp: query.timestamp,
         label: query.label,
     };
-    let secret_key = derive_timelock_x25519(&state.key, &timelock);
+    let secret_key = derive_timelock_x25519(
+        &state.key,
+        &timelock,
+        encryption_key
+            .to_str()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+    );
 
     let id_card = gxt::make_id_card(hex::encode(secret_key.as_bytes()).as_str(), timelock)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -110,21 +127,29 @@ async fn get_private(
 ) -> Result<String, (StatusCode, String)> {
     let timestamp =
         parse_timestamp(&query.timestamp).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let id_card = headers
+        .get("id_card")
+        .ok_or_else(|| (StatusCode::BAD_REQUEST, "Bad Request".to_string()))?;
+
     let now = OffsetDateTime::now_utc();
 
     if now < timestamp {
         return Err((StatusCode::FORBIDDEN, ApiErr::NotYet.to_string()));
     }
 
+    let envelope = gxt::verify_message::<serde_json::Value>(
+        id_card
+            .to_str()
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+    )
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     let timelock = PublicTimelock {
         timestamp: query.timestamp,
         label: query.label,
     };
-    let secret_key = derive_timelock_x25519(&state.key, &timelock);
+    let secret_key = derive_timelock_x25519(&state.key, &timelock, &envelope.encryption_key);
     let secret_key = hex::encode(secret_key.to_bytes());
-    let id_card = headers
-        .get("id_card")
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, "Bad Request".to_string()))?;
     let private_timelock = PrivateTimelock {
         label: timelock.label,
         timestamp: timelock.timestamp,
