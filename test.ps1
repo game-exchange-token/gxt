@@ -31,13 +31,13 @@ cargo run -p gxt-cli -q -- keygen --out tmp/bob.key
 Write-Output '{"name":"Bob"}' | cargo run -p gxt-cli -q -- id tmp/bob.key --out tmp/bob.id --meta -
 
 # Verify if the id card is valid and signed
-cargo run -p gxt-cli -q -- verify --file tmp/bob.id
+cargo run -p gxt-cli -q -- verify --file tmp/bob.id > tmp/bob.id.verified
 
 # Create a message for bob using their id card and your own key
 cargo run -p gxt-cli -q -- msg --key tmp/alice.key --to tmp/bob.id --out tmp/msg_to_bob.gxt --payload '{"hello":"world"}'
 
 # Verify if the message is valid and signed
-cargo run -p gxt-cli -q -- verify --file tmp/msg_to_bob.gxt
+cargo run -p gxt-cli -q -- verify --file tmp/msg_to_bob.gxt > tmp/msg_to_bob.gxt.verified
 
 # Decrypt the message using bobs key
-cargo run -p gxt-cli -q -- decrypt --key tmp/bob.key --file tmp/msg_to_bob.gxt
+cargo run -p gxt-cli -q -- decrypt --key tmp/bob.key --file tmp/msg_to_bob.gxt > tmp/msg_to_bob.decrypted
