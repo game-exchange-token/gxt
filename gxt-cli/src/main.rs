@@ -1,10 +1,13 @@
 #![forbid(unsafe_code)]
 
+mod server;
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::{
     fs,
     io::{self, Read, Write},
+    net::SocketAddr,
     path::{Path, PathBuf},
 };
 
@@ -96,9 +99,20 @@ enum Cmd {
         #[arg(short, long)]
         json: bool,
     },
+
+    /// Starts the gxt server
+    Serve {
+        /// The ip and port the server should listen on
+        #[arg(short, long)]
+        listen: SocketAddr,
+        /// The key for the server
+        #[arg(short, long)]
+        key: PathBuf,
+    },
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.cmd {
@@ -137,7 +151,7 @@ fn main() -> Result<()> {
             let id_card = fs::read_to_string(to)?;
             let payload_json = value_or_stdin(&payload)?;
             let payload: serde_json::Value = serde_json::from_str(payload_json.trim())?;
-            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, payload, parent)?;
+            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, &payload, parent)?;
             write_out_string(&encrypted_message, out.as_deref())?;
         }
         Cmd::Decrypt { key, msg, json } => {
@@ -154,6 +168,10 @@ fn main() -> Result<()> {
             } else {
                 println!("{envelope}");
             }
+        }
+
+        Cmd::Serve { listen, key } => {
+            server::serve(listen, key).await?;
         }
     }
 

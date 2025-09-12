@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["gxt", "gxt-cli", "gxt-api-c", "gxt-api-extism"]
+members = ["gxt", "gxt-cli", "gxt-api-c", "gxt-api-extism", "gxt-extism-types"]
+default-members = ["gxt-cli"]
 
 [workspace.package]
 edition = "2024"
@@ -15,6 +16,7 @@ documentation = "https://docs.rs/gxt/latest/gxt/"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 serde_cbor = "0.11"
+hex = "0.4"
 gxt = { version = "1.0.0", path = "gxt" }
 
 [profile.release]

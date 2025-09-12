@@ -76,7 +76,7 @@ pub unsafe extern "C" fn gxt_encrypt_message(
     let msg = gxt::encrypt_message(
         key.to_str().expect(E_C_TO_RUST_STRING),
         id_card.to_str().expect(E_C_TO_RUST_STRING),
-        payload,
+        &payload,
         None,
     )
     .expect("Failed to verify message");
@@ -107,7 +107,7 @@ pub unsafe extern "C" fn gxt_encrypt_message_with_parent(
     let msg = gxt::encrypt_message(
         key.to_str().expect(E_C_TO_RUST_STRING),
         id_card.to_str().expect(E_C_TO_RUST_STRING),
-        payload,
+        &payload,
         Some(parent.to_str().expect(E_C_TO_RUST_STRING).to_string()),
     )
     .expect("Failed to verify message");

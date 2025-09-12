@@ -27,7 +27,7 @@ pub fn encrypt_message(
         parent,
     }): Json<EncryptRequest>,
 ) -> FnResult<String> {
-    Ok(gxt::encrypt_message(&key, &id_card, payload, parent)?)
+    Ok(gxt::encrypt_message(&key, &id_card, &payload, parent)?)
 }
 
 #[plugin_fn]

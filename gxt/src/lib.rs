@@ -286,7 +286,7 @@ pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Enve
 pub fn encrypt_message<P: Serialize + DeserializeOwned>(
     key: &str,
     id_card: &str,
-    payload: P,
+    payload: &P,
     parent: Option<String>,
 ) -> Result<String, GxtError> {
     let id_card = verify_message::<Value>(id_card.trim())?;
