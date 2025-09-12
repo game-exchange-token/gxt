@@ -16,13 +16,6 @@ crate-type = ["staticlib", "cdylib"]
 [dependencies]
 gxt.workspace = true
 serde_json.workspace = true
-interoptopus = "0.14.27"
-interoptopus_backend_c = "0.14.25"
-interoptopus_backend_cpython = "0.14.25"
-interoptopus_backend_csharp = { version = "0.14.25", features = [
-    "unity",
-    "serde",
-] }
 
 [build-dependencies]
 cbindgen = "0.29.0"
