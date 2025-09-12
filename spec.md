@@ -56,7 +56,6 @@ The `payload` of an encrypted message contains:
 ```
 {
   "to":   <X25519 public key, 32 bytes>,
-  "from": <X25519 public key, 32 bytes>,
   "enc": { "alg": "xchacha20poly1305", "n24": <24-byte nonce>, "ct": <ciphertext bytes> },
 }
 ```
