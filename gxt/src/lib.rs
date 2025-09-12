@@ -292,7 +292,7 @@ pub fn encrypt_message<P: Serialize + DeserializeOwned>(
     let id_card = verify_message::<Value>(id_card.trim())?;
     let their_encryption_key = parse_hex::<32>(&id_card.encryption_key)?;
     let key = parse_key(key.trim())?;
-    let (my_secret_key, my_encryption_key) = derive_enc_from_signing(&key);
+    let (my_secret_key, _my_encryption_key) = derive_enc_from_signing(&key);
     let encryption_key = enc_derive_key_from_pairs(&my_secret_key, &their_encryption_key);
     let cipher = XChaCha20Poly1305::new(&encryption_key);
     let mut nonce_bytes = [0u8; 24];
@@ -307,10 +307,6 @@ pub fn encrypt_message<P: Serialize + DeserializeOwned>(
     message.insert(
         Value::Text("to".into()),
         Value::Text(hex::encode(their_encryption_key)),
-    );
-    message.insert(
-        Value::Text("from".into()),
-        Value::Text(hex::encode(my_encryption_key)),
     );
     let mut encrypted_message = std::collections::BTreeMap::new();
     encrypted_message.insert(
@@ -353,10 +349,6 @@ pub fn decrypt_message<P: Serialize + DeserializeOwned>(
         Some(Value::Text(t)) => parse_hex::<32>(t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let from = match map.get(&Value::Text("from".into())) {
-        Some(Value::Text(t)) => parse_hex::<32>(t)?,
-        _ => return Err(GxtError::Invalid),
-    };
     let Some(Value::Map(encm)) = map.get(&Value::Text("enc".into())) else {
         return Err(GxtError::Invalid);
     };
@@ -374,7 +366,7 @@ pub fn decrypt_message<P: Serialize + DeserializeOwned>(
         return Err(GxtError::AccessDenied);
     }
 
-    let key = enc_derive_key_from_pairs(&my_secret_key, &from);
+    let key = enc_derive_key_from_pairs(&my_secret_key, &parse_hex(&envelope.encryption_key)?);
     let cipher = XChaCha20Poly1305::new(&key);
     let nonce = XNonce::from_slice(&nonce);
     let plaintext = cipher
