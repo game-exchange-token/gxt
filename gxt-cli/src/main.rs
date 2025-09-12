@@ -106,6 +106,7 @@ fn main() -> Result<()> {
             let signing_key = gxt::make_key();
             write_out_string(&signing_key, Some(out.as_ref()))?;
         }
+
         Cmd::Id { out, key, meta } => {
             let signing_key = fs::read_to_string(key)?;
             let meta_json = value_or_stdin(&meta)?;
@@ -113,6 +114,7 @@ fn main() -> Result<()> {
             let id_card = gxt::make_id_card(&signing_key, meta)?;
             write_out_string(&id_card, out.as_deref())?;
         }
+
         Cmd::Verify { msg, json } => {
             let token = match (msg.msg, msg.file) {
                 (Some(msg), None) => value_or_stdin(&msg)?,
@@ -126,6 +128,7 @@ fn main() -> Result<()> {
                 println!("{envelope}");
             }
         }
+
         Cmd::Msg {
             key,
             to,
@@ -140,6 +143,7 @@ fn main() -> Result<()> {
             let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, payload, parent)?;
             write_out_string(&encrypted_message, out.as_deref())?;
         }
+
         Cmd::Decrypt { key, msg, json } => {
             let encrypted_message = match (msg.msg, msg.file) {
                 (Some(msg), None) => value_or_stdin(&msg)?,
