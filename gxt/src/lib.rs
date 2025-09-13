@@ -26,6 +26,7 @@ pub use serde_json::{from_value, json, to_value};
 const PREFIX: &str = "gxt:";
 const SIGNATURE_DOMAIN: &[u8] = b"GXT";
 const MAX_RAW: usize = 64 * 1024;
+const VERSION: u8 = 2;
 
 type Bytes32 = [u8; 32];
 type Bytes64 = [u8; 64];
@@ -213,7 +214,7 @@ pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Enve
     let mut values = arr.into_iter();
 
     let version = match values.next() {
-        Some(Value::Integer(i)) if i == 1.into() => 1u8,
+        Some(Value::Integer(i)) if i == VERSION.into() => 1u8,
         _ => return Err(GxtError::Invalid),
     };
     let verification_key_bytes = match values.next() {
@@ -386,7 +387,6 @@ pub fn decrypt_message<P: Serialize + DeserializeOwned>(
 
 #[allow(clippy::too_many_arguments)]
 fn cbor_array(
-    version: u8,
     verification_key: &Bytes32,
     encryption_key: &Bytes32,
     kind: PayloadKind,
@@ -396,7 +396,7 @@ fn cbor_array(
     signature: Option<&Bytes64>,
 ) -> Result<Vec<u8>, GxtError> {
     let envelope_values = Value::Array(vec![
-        Value::Integer(version.into()),
+        Value::Integer(VERSION.into()),
         Value::Text(hex::encode(verification_key)),
         Value::Text(hex::encode(encryption_key)),
         Value::Text(kind.to_string()),
@@ -415,7 +415,6 @@ fn get_canonical_representation(
     payload: Value,
 ) -> Result<Vec<u8>, GxtError> {
     cbor_array(
-        1,
         verification_key,
         encryption_key,
         kind,
@@ -451,7 +450,6 @@ fn make(
     let signature = key.sign(&preimage(&canonical));
 
     encode_message(
-        1,
         &verification_key,
         &encryption_key,
         kind,
@@ -464,7 +462,6 @@ fn make(
 
 #[allow(clippy::too_many_arguments)]
 fn encode_message(
-    version: u8,
     verification_key: &Bytes32,
     encryption_key: &Bytes32,
     kind: PayloadKind,
@@ -474,7 +471,6 @@ fn encode_message(
     signature: &Bytes64,
 ) -> Result<String, GxtError> {
     let envelope_cbor = cbor_array(
-        version,
         verification_key,
         encryption_key,
         kind,
