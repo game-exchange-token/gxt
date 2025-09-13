@@ -17,10 +17,10 @@ serde_json.workspace = true
 serde_cbor.workspace = true
 hex.workspace = true
 ed25519-dalek = { version = "2", features = ["rand_core"] }
-x25519-dalek = "1"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
 blake3 = "1.5"
-brotli = "3"
+brotli = "8"
 bs58 = "0.5"
-thiserror = "1"
+thiserror = "2"
 chacha20poly1305 = "0.10"
 rand = "0.8"

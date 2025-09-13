@@ -1,6 +1,7 @@
 [workspace]
-resolver = "3"
+resolver = "2"
 members = ["gxt", "gxt-cli", "gxt-api-c", "gxt-api-extism", "gxt-extism-types"]
+exclude = ["gxt-api-extism"]
 default-members = ["gxt-cli"]
 
 [workspace.package]
