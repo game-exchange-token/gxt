@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["gxt", "gxt-cli", "gxt-api-c", "gxt-api-extism", "gxt-extism-types"]
+members = ["gxt", "gxt-api-c", "gxt-api-extism", "gxt-cli", "gxt-extism-types"]
 exclude = ["gxt-api-extism"]
 default-members = ["gxt-cli"]
 
@@ -14,11 +14,11 @@ repository = "https://github.com/game-exchange-token/gxt"
 documentation = "https://docs.rs/gxt/latest/gxt/"
 
 [workspace.dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["preserve_order"] }
-serde_cbor = "0.11"
-hex = "0.4"
 gxt = { version = "1.0.0", path = "gxt" }
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_cbor = "0.11"
+serde_json = { version = "1", features = ["preserve_order"] }
 
 [profile.release]
 lto = true
