@@ -1,0 +1,20 @@
+[package]
+name = "gxt-wasm"
+edition = "2024"
+description.workspace = true
+authors.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+documentation.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+getrandom = { version = "0.2.16", features = ["js"] }
+gxt.workspace = true
+serde-wasm-bindgen = "0.6.5"
+serde_json.workspace = true
+wasm-bindgen = { version = "0.2.101", features = ["serde"] }

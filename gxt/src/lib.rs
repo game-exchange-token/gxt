@@ -8,17 +8,14 @@
 #![deny(missing_docs)]
 #![allow(clippy::similar_names)]
 
-use std::{
-    fmt,
-    io::{Read, Write},
-    str::FromStr,
-};
+use std::{fmt, str::FromStr};
 
 use chacha20poly1305::aead::{Aead, KeyInit};
 use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use rand::RngCore;
 use rand::rngs::OsRng;
+use serde::Deserialize;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_cbor::Value;
 use thiserror::Error;
@@ -87,7 +84,7 @@ pub enum GxtError {
 }
 
 /// What kind of payload was sent
-#[derive(Serialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub enum PayloadKind {
     /// ID card
     Id,
@@ -116,11 +113,12 @@ impl fmt::Display for PayloadKind {
     }
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 /// Parsed, verified GXT record.
 ///
 /// Represents a decoded token after signature verification and/or decryption.
-pub struct Envelope<P: Serialize + DeserializeOwned> {
+#[serde(bound(serialize = "P: Serialize", deserialize = "P: Deserialize<'de>"))]
+pub struct Envelope<P> {
     /// Version
     pub version: u8,
     /// Verification Key
@@ -488,9 +486,7 @@ fn encode_message(
     if envelope_cbor.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }
-    let mut compressed_message = Vec::new();
-    brotli::CompressorWriter::new(&mut compressed_message, 4096, 5, 20)
-        .write_all(&envelope_cbor)?;
+    let compressed_message = zstd::encode_all(&envelope_cbor[..], 3)?;
     Ok(format!(
         "{}{}",
         PREFIX,
@@ -501,8 +497,7 @@ fn encode_message(
 fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
     let rest = message.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
     let compressed_message = bs58::decode(rest).into_vec()?;
-    let mut raw = Vec::new();
-    brotli::Decompressor::new(&compressed_message[..], 4096).read_to_end(&mut raw)?;
+    let raw = zstd::encode_all(&compressed_message[..], 3)?;
     if raw.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }

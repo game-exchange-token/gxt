@@ -6,7 +6,7 @@ A GXT is a string token that starts with `gxt:` and encodes a compressed CBOR re
 payload and stable id.
 
 ```
-token = "gxt:" + Base58btc( Brotli( CBOR([ version, verification_key, encryption_key, kind, payload, parent, id, signature ]) ) )
+token = "gxt:" + Base58btc( zstd( CBOR([ version, verification_key, encryption_key, kind, payload, parent, id, signature ]) ) )
 ```
 
 - `version` — protocol version (currently `1`).
@@ -33,12 +33,12 @@ The payload is any JSON value. The protocol does not interpret it.
 
 ## Encoding Details
 - **CBOR** — Canonical emission via `serde_cbor`.
-- **Compression** — Brotli with `quality=5`, `lgwin=20`.
+- **Compression** — zstd with `level=3`.
 - **Transport** — Base58btc, prefixed with `gxt:`.
 
 ## Verification
 To verify a token:
-1. Strip `gxt:` and Base58-decode, then Brotli-decompress to raw CBOR.
+1. Strip `gxt:` and Base58-decode, then zstd-decompress to raw CBOR.
 2. Parse as a 8-element CBOR array `[version, verification_key, encryption_key, kind, payload, parent, id, signature]`.
 3. Assert:
    - `version == 1`
