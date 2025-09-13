@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = ["gxt", "gxt-cli", "gxt-api-c", "gxt-api-extism", "gxt-extism-types"]
 default-members = ["gxt-cli"]
 
@@ -9,7 +9,7 @@ description = "Minimal, encrypted, signed and copy-pasteable tokens for manual d
 authors = ["hardliner66"]
 license = "MIT OR Apache-2.0"
 version = "1.5.0"
-repository = "https://github.com/hardliner66/gxt"
+repository = "https://github.com/game-exchange-token/gxt"
 documentation = "https://docs.rs/gxt/latest/gxt/"
 
 [workspace.dependencies]
