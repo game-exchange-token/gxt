@@ -524,7 +524,7 @@ dependencies = [
 
 [[package]]
 name = "gxt"
-version = "1.6.0"
+version = "2.0.0"
 dependencies = [
  "blake3",
  "bs58",
@@ -563,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-cli"
-version = "1.6.0"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-extism-types"
-version = "1.6.0"
+version = "2.0.0"
 dependencies = [
  "extism-convert",
  "gxt",
@@ -584,7 +584,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-wasm"
-version = "1.6.0"
+version = "2.0.0"
 dependencies = [
  "getrandom 0.2.16",
  "gxt",
