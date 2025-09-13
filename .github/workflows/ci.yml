@@ -82,7 +82,7 @@ jobs:
           cargo binstall wasm-pack
 
           cd gxt-wasm
-          wasm-pack
+          wasm-pack build --target nodejs --release
           zip -r gxt-nodejs.zip pkg/*
           mv gxt-nodejs.zip ..
 
@@ -164,6 +164,7 @@ jobs:
 
       - name: Build C# Dll
         run: |
+          rustup target add wasm32-wasip1
           cd gxt-api-csharp/gxt-api-csharp
           dotnet build -c Release
           dotnet pack -c Release --no-build --output .
