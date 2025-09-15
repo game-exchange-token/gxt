@@ -47,6 +47,7 @@ impl From<gxt::Envelope<serde_json::Value>> for UiEnvelope {
 }
 
 pub fn run(path: Option<PathBuf>, key: Option<PathBuf>) -> anyhow::Result<()> {
+    #[cfg(windows)]
     hide_console();
     let ui = AppWindow::new()?;
 
