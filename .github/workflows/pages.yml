@@ -49,10 +49,25 @@ jobs:
             target/wasm32-unknown-unknown/release/gxt_wasm.wasm
           touch docs/.nojekyll
 
+      - name: Build site structure (root = app, /docs = README)
+        run: |
+          rm -rf site
+          mkdir -p site
+          # Copy SPA (current app lives in docs/) to site root
+          cp -R docs/* site/
+          # Generate docs/index.html from README.md
+          sudo apt-get update && sudo apt-get install -y pandoc
+          mkdir -p site/docs
+          pandoc -f gfm -t html5 README.md -o site/docs/index.html \
+            --metadata title="GXT — Documentation" \
+            -s
+          # Ensure GitHub Pages doesn't run Jekyll on artifact
+          touch site/.nojekyll
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: site
 
   deploy:
     environment:
