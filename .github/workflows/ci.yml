@@ -46,9 +46,15 @@ jobs:
       - name: Run tests
         run: cargo test -p gxt --verbose
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib
+
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli -F ui --release
+          cargo build -p gxt-api-c --release
           strip --strip-all ./target/release/gxt
 
           mkdir -p assets/shared
@@ -69,6 +75,18 @@ jobs:
 
           mv ./target/wasm32-wasip1/release/gxt_api_extism.wasm gxt_extism_wasip1.wasm
 
+      - uses: cargo-bins/cargo-binstall@main
+
+      - name: Build nodejs package
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo binstall wasm-pack
+
+          cd gxt-wasm
+          wasm-pack build --target nodejs --release
+          zip -r gxt-nodejs.zip pkg/*
+          mv gxt-nodejs.zip ..
+
       - name: Upload release
         id: upload-release-linux
         uses: softprops/action-gh-release@v2
@@ -76,6 +94,7 @@ jobs:
         with:
           files: |
             gxt-linux.tar.gz
+            gxt-nodejs.zip
             gxt_extism_wasip1.wasm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -92,7 +111,8 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli -F ui --release
+          cargo build -p gxt-api-c --release
 
           mkdir -p assets/shared
           mv ./target/release/libgxt_c.dylib assets/shared/libgxt.dylib
@@ -125,7 +145,8 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli -F ui --release
+          cargo build -p gxt-api-c --release
 
           mkdir -p assets/shared
           mv ./target/release/gxt_c.dll assets/shared/gxt.dll
@@ -141,11 +162,24 @@ jobs:
 
           Compress-Archive -Path assets\* -DestinationPath gxt-win.zip -Force
 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v1
+
+      - name: Build C# Dll
+        run: |
+          rustup target add wasm32-wasip1
+          cd gxt-api-csharp/gxt-api-csharp
+          dotnet build -c Release
+          dotnet pack -c Release --no-build --output .
+          mv *.nupkg ../../
+
       - name: Upload release
         id: upload-release-windows
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: gxt-win.zip
+          files: |
+            gxt-win.zip
+            *.nupkg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

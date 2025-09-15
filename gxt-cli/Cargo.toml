@@ -1,6 +1,6 @@
 [package]
 name = "gxt-cli"
-version = "1.0.0"
+version.workspace = true
 description.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,12 +8,33 @@ authors.workspace = true
 repository.workspace = true
 readme = "../README.md"
 
-[dependencies]
-gxt.workspace = true
-serde_json.workspace = true
-clap = { version = "4.5", features = ["derive"] }
-anyhow = "1"
-
 [[bin]]
 name = "gxt"
 path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.5", features = ["derive"] }
+gxt.workspace = true
+serde_json.workspace = true
+log = "0.4.27"
+serde = { version = "1.0.219", features = ["derive"] }
+env_logger = "0.11.8"
+
+rfd = { version = "0.15.4", optional = true }
+slint = { version = "1.13", optional = true }
+windows-sys = { version = "0.61.0", features = [
+    "Win32",
+    "Win32_UI",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System",
+    "Win32_System_Console",
+], optional = true }
+
+[build-dependencies]
+slint-build = { version = "1.13", optional = true }
+
+[features]
+default = []
+ui = ["dep:slint", "dep:slint-build", "dep:rfd", "dep:windows-sys"]
+windows-sys = ["dep:windows-sys"]

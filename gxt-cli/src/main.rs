@@ -1,12 +1,14 @@
-#![forbid(unsafe_code)]
-
-use anyhow::Result;
-use clap::{Parser, Subcommand};
 use std::{
     fs,
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
+
+use anyhow::Result;
+use clap::{Parser, Subcommand, ValueEnum};
+
+#[cfg(feature = "ui")]
+mod ui;
 
 #[derive(Parser)]
 #[command(name = "gxt", version, about = "GXT (Game Exchange Token)")]
@@ -25,6 +27,12 @@ pub struct MsgInput {
     /// The path to the encrypted message
     #[arg(short, long)]
     file: Option<PathBuf>,
+}
+
+#[derive(Clone, ValueEnum)]
+enum TimelockType {
+    Public,
+    Private,
 }
 
 #[derive(Subcommand)]
@@ -96,6 +104,15 @@ enum Cmd {
         #[arg(short, long)]
         json: bool,
     },
+
+    #[cfg(feature = "ui")]
+    /// Show a simple UI for opening messages
+    Ui {
+        /// The message to decode
+        path: Option<PathBuf>,
+        /// The key, if the message is encrypted
+        key: Option<PathBuf>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -106,6 +123,7 @@ fn main() -> Result<()> {
             let signing_key = gxt::make_key();
             write_out_string(&signing_key, Some(out.as_ref()))?;
         }
+
         Cmd::Id { out, key, meta } => {
             let signing_key = fs::read_to_string(key)?;
             let meta_json = value_or_stdin(&meta)?;
@@ -113,6 +131,7 @@ fn main() -> Result<()> {
             let id_card = gxt::make_id_card(&signing_key, meta)?;
             write_out_string(&id_card, out.as_deref())?;
         }
+
         Cmd::Verify { msg, json } => {
             let token = match (msg.msg, msg.file) {
                 (Some(msg), None) => value_or_stdin(&msg)?,
@@ -126,6 +145,7 @@ fn main() -> Result<()> {
                 println!("{envelope}");
             }
         }
+
         Cmd::Msg {
             key,
             to,
@@ -137,9 +157,10 @@ fn main() -> Result<()> {
             let id_card = fs::read_to_string(to)?;
             let payload_json = value_or_stdin(&payload)?;
             let payload: serde_json::Value = serde_json::from_str(payload_json.trim())?;
-            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, payload, parent)?;
+            let encrypted_message = gxt::encrypt_message(&signing_key, &id_card, &payload, parent)?;
             write_out_string(&encrypted_message, out.as_deref())?;
         }
+
         Cmd::Decrypt { key, msg, json } => {
             let encrypted_message = match (msg.msg, msg.file) {
                 (Some(msg), None) => value_or_stdin(&msg)?,
@@ -155,6 +176,8 @@ fn main() -> Result<()> {
                 println!("{envelope}");
             }
         }
+        #[cfg(feature = "ui")]
+        Cmd::Ui { path, key } => ui::run(path, key)?,
     }
 
     Ok(())

@@ -1,7 +1,7 @@
 # Glossary
 
 - **GXT** — *Game Exchange Token.* The overall format + tools for sharing signed and encrypted payloads as short strings.
-- **Token** — A string that starts with `gxt:` and contains Base58btc-encoded, Brotli-compressed CBOR bytes.
+- **Token** — A string that starts with `gxt:` and contains Base58btc-encoded, zstd-compressed CBOR bytes.
 - **canonical** — The canonical CBOR encoding of the top-level array `[version, verification_key, encryption_key, kind, payload, parent, id, signature]` **with `id` and `signature` set to empty byte strings**. This is what we hash and sign.
 - **`version`** — Protocol version (currently `1`). Stored *inside* the CBOR array; the outside prefix stays `gxt:`.
 - **`id`** — A 32-byte BLAKE3 hash of the `canonical representation`. Serves as a stable, content-addressed identifier for the token.

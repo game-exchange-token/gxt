@@ -1,6 +1,6 @@
 [package]
 name = "gxt"
-version = "1.0.0"
+version.workspace = true
 description.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -12,15 +12,15 @@ readme = "../README.md"
 crate-type = ["lib"]
 
 [dependencies]
-serde.workspace = true
-serde_json.workspace = true
-serde_cbor.workspace = true
-ed25519-dalek = { version = "2", features = ["rand_core"] }
-hex = "0.4"
 blake3 = "1.5"
-brotli = "3"
 bs58 = "0.5"
-thiserror = "1"
-x25519-dalek = "1"
 chacha20poly1305 = "0.10"
+ed25519-dalek = { version = "2", features = ["rand_core", "serde"] }
+hex.workspace = true
 rand = "0.8"
+serde.workspace = true
+serde_cbor.workspace = true
+serde_json.workspace = true
+thiserror = "2"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+zstd = { version = "0.13.3", features = ["wasm"] }
