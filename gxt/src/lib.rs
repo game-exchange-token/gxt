@@ -91,6 +91,8 @@ pub enum PayloadKind {
     Id,
     /// Message
     Msg,
+    /// A key packaged into a gxt token
+    Key,
 }
 
 impl FromStr for PayloadKind {
@@ -100,6 +102,7 @@ impl FromStr for PayloadKind {
         match s.trim() {
             "id" => Ok(PayloadKind::Id),
             "msg" => Ok(PayloadKind::Msg),
+            "key" => Ok(PayloadKind::Key),
             _ => Err(GxtError::UnknownPayloadKind),
         }
     }
@@ -110,6 +113,7 @@ impl fmt::Display for PayloadKind {
         match self {
             Self::Id => write!(f, "id"),
             Self::Msg => write!(f, "msg"),
+            Self::Key => write!(f, "key"),
         }
     }
 }
@@ -177,7 +181,14 @@ impl<P: Serialize + DeserializeOwned> fmt::Display for Envelope<P> {
 /// Creates a private key for a peer.
 pub fn make_key() -> String {
     let key = SigningKey::generate(&mut OsRng);
-    hex::encode(key.to_bytes())
+    make(
+        &key,
+        PayloadKind::Key,
+        serde_json::from_value(serde_json::Value::String(hex::encode(key.as_bytes())))
+            .expect("Should never happen."),
+        None,
+    )
+    .expect("Should never happen.")
 }
 
 /// Creates an ID card containing the necessary data for
@@ -513,8 +524,14 @@ fn parse_hex<const SIZE: usize>(hex_string: &str) -> Result<[u8; SIZE], GxtError
     Ok(hex)
 }
 
-fn parse_key(hex_string: &str) -> Result<SigningKey, GxtError> {
-    Ok(SigningKey::from_bytes(&parse_hex::<32>(hex_string)?))
+fn parse_key(key: &str) -> Result<SigningKey, GxtError> {
+    if key.starts_with(PREFIX) {
+        let token = verify_message(key)?;
+        let hex: String = from_value(dbg!(token.payload))?;
+        Ok(SigningKey::from_bytes(&parse_hex::<32>(&hex)?))
+    } else {
+        Ok(SigningKey::from_bytes(&parse_hex::<32>(key)?))
+    }
 }
 
 fn derive_enc_from_signing(key: &SigningKey) -> (Bytes32, Bytes32) {
