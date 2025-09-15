@@ -1,27 +1,16 @@
-Open
-http://localhost:8080
-and
-test
-UI.
-If
-you
-need
-a
-favicon:
-echo
-^<svg
+<svg
 xmlns=http://www.w3.org/2000/svg
-viewBox=0 0 64 64^>^<defs^>^<linearGradient
+viewBox=0 0 64 64><defs><linearGradient
 id=g
 x1=0
 y1=0
 x2=1
-y2=1^>^<stop
+y2=1><stop
 offset=0
-stop-color=#2dd4bf/>^<stop
+stop-color=#2dd4bf/><stop
 offset=1
-stop-color=#6ea8fe/>^</linearGradient^>^</defs^>^<rect
+stop-color=#6ea8fe/></linearGradient></defs><rect
 width=64
 height=64
 rx=12
-fill=url(#g)/^>^</svg^>
+fill=url(#g)/></svg>

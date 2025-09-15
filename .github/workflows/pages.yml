@@ -1,0 +1,65 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies (clang/llvm)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
+      - name: Build gxt-wasm (wasm32)
+        env:
+          CC_wasm32_unknown_unknown: clang
+          CC_wasm32-unknown-unknown: clang
+        run: |
+          cargo build -p gxt-wasm --release --target wasm32-unknown-unknown
+
+      - name: Generate web bindings
+        run: |
+          mkdir -p docs/pkg
+          wasm-bindgen --target web --no-typescript \
+            --out-dir docs/pkg \
+            target/wasm32-unknown-unknown/release/gxt_wasm.wasm
+          touch docs/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
