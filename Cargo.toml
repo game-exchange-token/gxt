@@ -9,7 +9,7 @@ members = [
     "gxt-wasm",
     "gxt-viewer",
 ]
-exclude = ["gxt-api-extism"]
+exclude = ["gxt-api-extism", "gxt-api-c", "gxt-wasm"]
 default-members = ["gxt-cli"]
 
 [workspace.package]
