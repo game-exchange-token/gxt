@@ -1,6 +1,6 @@
 import { ListView, Button, VerticalBox, HorizontalBox, Button, Button } from "std-widgets.slint";
 
-export struct Envelope {
+export struct UiEnvelope {
     version: int,
     verification_key: string,
     encryption_key: string,
@@ -35,13 +35,14 @@ component KVList inherits Window {
 
 export component AppWindow inherits Window {
     in-out property <string> token_text;
-    in property <Envelope> envelope;
+    in property <UiEnvelope> envelope;
     in property <bool> can_decrypt;
     callback request-load();
     callback request-decrypt();
     function element(name: string, value: string) -> Element {
         { name: name, value: value }
     }
+    title: "GXT Viewer";
     MenuBar {
         Menu {
             title: "Token";

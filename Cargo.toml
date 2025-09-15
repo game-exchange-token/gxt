@@ -7,7 +7,6 @@ members = [
     "gxt-cli",
     "gxt-extism-types",
     "gxt-wasm",
-    "gxt-viewer",
 ]
 exclude = ["gxt-api-extism", "gxt-api-c", "gxt-wasm"]
 default-members = ["gxt-cli"]

@@ -53,9 +53,8 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-viewer -p gxt-api-c --release
+          cargo build -p gxt-cli -p gxt-api-c --release
           strip --strip-all ./target/release/gxt
-          strip --strip-all ./target/release/gxt-viewer
 
           mkdir -p assets/shared
           mv ./target/release/libgxt_c.so assets/shared/libgxt.so
@@ -67,7 +66,6 @@ jobs:
           mv ./target/release/gxt.h assets/include/
 
           mv ./target/release/gxt assets/
-          mv ./target/release/gxt-viewer assets/
 
           tar czf gxt-linux.tar.gz assets/*
 
@@ -112,7 +110,7 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-viewer -p gxt-api-c --release
+          cargo build -p gxt-cli -p gxt-api-c --release
 
           mkdir -p assets/shared
           mv ./target/release/libgxt_c.dylib assets/shared/libgxt.dylib
@@ -124,7 +122,6 @@ jobs:
           mv ./target/release/gxt.h assets/include/
 
           mv ./target/release/gxt assets/
-          mv ./target/release/gxt-viewer assets/
 
           tar czf gxt-macos.tar.gz assets/*
 
@@ -146,7 +143,7 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-viewer -p gxt-api-c --release
+          cargo build -p gxt-cli -p gxt-api-c --release
 
           mkdir -p assets/shared
           mv ./target/release/gxt_c.dll assets/shared/gxt.dll
@@ -159,7 +156,6 @@ jobs:
           mv ./target/release/gxt.h assets/include/
 
           mv ./target/release/gxt.exe assets/
-          mv ./target/release/gxt-viewer.exe assets/
 
           Compress-Archive -Path assets\* -DestinationPath gxt-win.zip -Force
 

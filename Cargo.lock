@@ -2271,27 +2271,6 @@ version = "2.2.0"
 dependencies = [
  "anyhow",
  "clap",
- "gxt",
- "serde_json",
-]
-
-[[package]]
-name = "gxt-extism-types"
-version = "2.2.0"
-dependencies = [
- "extism-convert",
- "gxt",
- "serde",
- "serde_cbor",
- "serde_json",
-]
-
-[[package]]
-name = "gxt-viewer"
-version = "2.2.0"
-dependencies = [
- "anyhow",
- "clap",
  "elevated-command",
  "env_logger",
  "gxt",
@@ -2303,6 +2282,17 @@ dependencies = [
  "slint",
  "slint-build",
  "utfx",
+]
+
+[[package]]
+name = "gxt-extism-types"
+version = "2.2.0"
+dependencies = [
+ "extism-convert",
+ "gxt",
+ "serde",
+ "serde_cbor",
+ "serde_json",
 ]
 
 [[package]]
