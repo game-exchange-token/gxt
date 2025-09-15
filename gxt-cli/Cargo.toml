@@ -23,10 +23,18 @@ env_logger = "0.11.8"
 
 rfd = { version = "0.15.4", optional = true }
 slint = { version = "1.13", optional = true }
+windows-sys = { version = "0.61.0", features = [
+    "Win32",
+    "Win32_UI",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System",
+    "Win32_System_Console",
+], optional = true }
 
 [build-dependencies]
 slint-build = { version = "1.13", optional = true }
 
 [features]
 default = []
-ui = ["dep:slint", "dep:slint-build", "dep:rfd"]
+ui = ["dep:slint", "dep:slint-build", "dep:rfd", "dep:windows-sys"]
+windows-sys = ["dep:windows-sys"]

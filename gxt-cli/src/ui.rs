@@ -6,6 +6,21 @@ use slint::ToSharedString;
 
 slint::include_modules!();
 
+#[cfg(windows)]
+fn hide_console() {
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::System::Console::GetConsoleWindow;
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_HIDE;
+    use windows_sys::Win32::UI::WindowsAndMessaging::ShowWindow;
+
+    unsafe {
+        let window: HWND = GetConsoleWindow();
+        if window != std::ptr::null_mut() {
+            ShowWindow(window, SW_HIDE);
+        }
+    }
+}
+
 impl From<gxt::Envelope<serde_json::Value>> for UiEnvelope {
     fn from(value: gxt::Envelope<serde_json::Value>) -> Self {
         let gxt::Envelope {
@@ -32,6 +47,7 @@ impl From<gxt::Envelope<serde_json::Value>> for UiEnvelope {
 }
 
 pub fn run(path: Option<PathBuf>, key: Option<PathBuf>) -> anyhow::Result<()> {
+    hide_console();
     let ui = AppWindow::new()?;
 
     ui.set_can_decrypt(false);
