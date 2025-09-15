@@ -525,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "gxt"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "blake3",
  "bs58",
@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-api-c"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "cbindgen",
  "gxt",
@@ -552,7 +552,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-api-extism"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "extism-pdk",
  "gxt",
@@ -564,7 +564,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-cli"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -574,7 +574,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-extism-types"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "extism-convert",
  "gxt",
@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "gxt-wasm"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "getrandom 0.2.16",
  "gxt",
