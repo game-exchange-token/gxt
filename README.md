@@ -51,6 +51,9 @@ the API as an [Extism](https://extism.org/) plugin and a C# wrapper (based on Ex
 ## Install
 ```bash
 cargo install gxt-cli
+
+# or if you want the UI as well
+cargo install gxt-cli -F ui
 ```
 
 ## Demo

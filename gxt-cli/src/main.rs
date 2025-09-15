@@ -1,46 +1,14 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 use std::{
     fs,
     io::{self, Read, Write},
     path::{Path, PathBuf},
-    process::Command as StdCommand,
 };
-
-use registry::{Data, Hive, Security};
-
-#[cfg(target_os = "windows")]
-use elevated_command::Command;
-
-#[cfg(target_os = "windows")]
-use utfx::U16CString;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
 
+#[cfg(feature = "ui")]
 mod ui;
-
-#[cfg(not(target_os = "windows"))]
-fn register_protocol_handler() -> anyhow::Result<()> {
-    bail!("Automatic handler registration is only supported on Windows");
-}
-
-#[cfg(target_os = "windows")]
-fn register_protocol_handler() -> anyhow::Result<()> {
-    if !Command::is_elevated() {
-        let cmd = StdCommand::new(std::env::current_exe()?);
-        let elevated_cmd = Command::new(cmd);
-        _ = elevated_cmd.output().unwrap();
-        return Ok(());
-    }
-
-    let hive = Hive::ClassesRoot.create("gxt", Security::Write)?;
-    hive.set_value("URL Protocol", &Data::String(U16CString::from_str("")?))?;
-    let hive = Hive::ClassesRoot.create(r"gxt\shell\open\command", Security::Write)?;
-    let command = format!("{} ui \"%1\"", std::env::current_exe()?.to_string_lossy());
-    hive.set_value("", &Data::String(U16CString::from_str(command)?))?;
-    Ok(())
-}
 
 #[derive(Parser)]
 #[command(name = "gxt", version, about = "GXT (Game Exchange Token)")]
@@ -136,12 +104,15 @@ enum Cmd {
         #[arg(short, long)]
         json: bool,
     },
+
+    #[cfg(feature = "ui")]
+    /// Show a simple UI for opening messages
     Ui {
+        /// The message to decode
         path: Option<PathBuf>,
+        /// The key, if the message is encrypted
         key: Option<PathBuf>,
     },
-    #[cfg(target_os = "windows")]
-    Register,
 }
 
 fn main() -> Result<()> {
@@ -205,10 +176,7 @@ fn main() -> Result<()> {
                 println!("{envelope}");
             }
         }
-        #[cfg(target_os = "windows")]
-        Cmd::Register => {
-            register_protocol_handler()?;
-        }
+        #[cfg(feature = "ui")]
         Cmd::Ui { path, key } => ui::run(path, key)?,
     }
 

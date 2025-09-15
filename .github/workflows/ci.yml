@@ -53,7 +53,8 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli -F ui --release
+          cargo build -p gxt-api-c --release
           strip --strip-all ./target/release/gxt
 
           mkdir -p assets/shared
@@ -110,7 +111,8 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli -F ui --release
+          cargo build -p gxt-api-c --release
 
           mkdir -p assets/shared
           mv ./target/release/libgxt_c.dylib assets/shared/libgxt.dylib
@@ -143,7 +145,8 @@ jobs:
 
       - name: Run build
         run: |
-          cargo build -p gxt-cli -p gxt-api-c --release
+          cargo build -p gxt-cli -F ui --release
+          cargo build -p gxt-api-c --release
 
           mkdir -p assets/shared
           mv ./target/release/gxt_c.dll assets/shared/gxt.dll
