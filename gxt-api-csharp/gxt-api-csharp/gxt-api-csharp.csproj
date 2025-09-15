@@ -15,7 +15,7 @@
     <PackageProjectUrl></PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/hardliner66/gxt</RepositoryUrl>
-    <FileVersion>2.1.0</FileVersion>
+    <FileVersion>2.2.0</FileVersion>
     <Version>2.2.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AssemblyVersion>2.2.0</AssemblyVersion>
