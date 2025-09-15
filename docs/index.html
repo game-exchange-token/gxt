@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GXT – Crypto Tools</title>
+  <style>
+    :root { --bg:#0b1020; --panel:#121933; --muted:#7a88b8; --text:#e7ecff; --brand:#6ea8fe; --accent:#2dd4bf; --danger:#ef4444; }
+    * { box-sizing:border-box; }
+    html,body { height:100%; }
+    body { margin:0; font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial; background:linear-gradient(180deg,#0b1020,#0a0f1f 60%); color:var(--text); }
+    .container { max-width:1000px; margin:0 auto; padding:24px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+    .title { display:flex; align-items:center; gap:12px; }
+    .logo { width:36px; height:36px; border-radius:10px; background:radial-gradient(120% 120% at 10% 10%, var(--accent), transparent 50%), radial-gradient(120% 120% at 90% 90%, var(--brand), transparent 50%), #0e1530; box-shadow:0 10px 30px rgba(0,0,0,.3) inset, 0 10px 30px rgba(46,118,255,.2); }
+    h1 { font-size:20px; margin:0; letter-spacing:.3px; }
+    .muted { color:var(--muted); }
+    .card { background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.25); backdrop-filter: blur(6px); }
+    .row { display:flex; gap:14px; flex-wrap:wrap; }
+    .row > * { flex:1 1 280px; }
+    label { display:block; font-weight:600; margin-bottom:6px; }
+    input[type="file"], textarea, input[type="text"] { width:100%; padding:12px 12px; border-radius:10px; background:#0e1530; color:var(--text); border:1px solid rgba(255,255,255,.08); outline:none; }
+    textarea { min-height:160px; resize:vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .btn { appearance:none; border:0; background:linear-gradient(180deg, var(--brand), #3b6bd6); color:white; padding:10px 14px; border-radius:10px; font-weight:600; cursor:pointer; box-shadow: 0 10px 20px rgba(80,120,255,.35); transition:.15s transform ease; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.secondary { background:linear-gradient(180deg,#1f2a54,#18234a); color:#cdd8ff; box-shadow:none; }
+    .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,.12); color:#cdd8ff; }
+    .tabs { display:flex; gap:6px; padding:6px; background:#0d1430; border:1px solid rgba(255,255,255,.06); border-radius:12px; width:max-content; }
+    .tab { padding:8px 12px; border-radius:8px; cursor:pointer; color:#b9c6ff; user-select:none; }
+    .tab.active { background:linear-gradient(180deg,#18234a,#121a3c); color:#fff; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:14px; }
+    .keyline { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#0e1530; border:1px dashed rgba(255,255,255,.14); padding:10px 12px; border-radius:10px; overflow:auto; }
+    .hint { font-size:12px; color:var(--muted); }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#081027; border:1px solid rgba(255,255,255,.08); border-radius:999px; color:#cfe0ff; font-size:12px; }
+    .footer { margin-top:16px; color:var(--muted); font-size:12px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>GXT – Crypto Tools</h1>
+          <div class="muted">Signierte, komprimierte, verschlüsselte Tokens im Browser</div>
+        </div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Modus">
+        <div class="tab active" data-tab="crypt" role="tab" aria-selected="true">Crypt</div>
+        <div class="tab" data-tab="decrypt" role="tab" aria-selected="false">Decrypt</div>
+      </div>
+    </header>
+
+    <section id="panel-crypt" class="card" role="tabpanel" aria-labelledby="tab-crypt">
+      <div class="grid">
+        <div class="row">
+          <div>
+            <label>Eigene Key-Datei hochladen (.key)</label>
+            <input type="file" id="keyFile" accept=".key,.txt,.json" />
+            <div class="hint">Datei enthält entweder rohen 32-Byte-Private-Key als Hex oder einen GXT-Key-Token.</div>
+          </div>
+          <div>
+            <label>Maskierter Schlüssel</label>
+            <div id="maskedKey" class="keyline">–</div>
+          </div>
+        </div>
+
+        <div>
+          <label>Nachricht hochladen (Textdatei oder Inhalte einfügen)</label>
+          <div class="row">
+            <input type="file" id="msgFile" accept=".txt,.json" />
+            <button class="btn secondary" id="clearMsg">Leeren</button>
+          </div>
+          <textarea id="msgInput" placeholder="Mehrzeilige Nachricht hier einfügen..."></textarea>
+        </div>
+
+        <div class="row">
+          <button class="btn" id="btnMakeId">ID-Card aus Key erzeugen</button>
+          <button class="btn" id="btnEncrypt">Nachricht signieren + verschlüsseln</button>
+          <button class="btn ghost" id="btnVerify">Nur verifizieren</button>
+        </div>
+
+        <div>
+          <label>Ausgabe</label>
+          <textarea id="outputCrypt" readonly placeholder="Ausgaben erscheinen hier..."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-decrypt" class="card" role="tabpanel" aria-labelledby="tab-decrypt" hidden>
+      <div class="grid">
+        <div class="row">
+          <div class="pill">Ziel: Entschlüsseln, Anzeigen, Multiline Chatbox</div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Key</label>
+            <div id="maskedKey2" class="keyline">–</div>
+          </div>
+        </div>
+        <div>
+          <label>Multiline Chatbox</label>
+          <textarea id="chatBox" placeholder="Hier erscheinen verifizierte/entschlüsselte Inhalte..." readonly></textarea>
+        </div>
+        <div>
+          <label>GXT-Message hochladen/einfügen</label>
+          <div class="row">
+            <input type="file" id="cipherFile" accept=".txt" />
+            <button class="btn secondary" id="clearCipher">Leeren</button>
+          </div>
+          <textarea id="cipherInput" placeholder="Hier GXT-Token (gxt:...) einfügen"></textarea>
+        </div>
+        <div class="row">
+          <button class="btn" id="btnDecrypt">Entschlüsseln</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">© 2025 GXT · Arbeiten lokal im Browser – keine Datenübertragung</div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
