@@ -37,11 +37,11 @@
     <section class="card" aria-label="Your key">
       <div class="row">
         <div>
-          <label>Upload your key (.key)</label>
-          <input type="file" id="keyFile" accept=".key,.gxt,.id" />
+          <label>Upload your key (.gxk)</label>
+          <input type="file" id="keyFile" accept=".gxk" />
           <div class="hint">File contains either a raw 32-byte private key (hex) or a GXT key token.</div>
           <div class="row" style="margin-top:8px;">
-            <button class="btn secondary" id="btnGenerateKey">Generate .key</button>
+            <button class="btn secondary" id="btnGenerateKey">Generate .gxk</button>
           </div>
         </div>
         <div>
@@ -58,12 +58,12 @@
           <span class="pill" id="idCount">0</span>
         </div>
         <div style="margin-top:10px;">
-          <input type="file" id="idFile" accept=".key,.gxt,.id" />
-          <div class="hint">Import an ID card file (gxt:...)</div>
+          <input type="file" id="idFile" accept=".gxi" />
+          <div class="hint">Import an ID card file (gxi:...)</div>
         </div>
         <div style="margin-top:10px;">
           <label>Paste IDs (text)</label>
-          <textarea id="idImportInput" placeholder="Multiple gxt:... tokens allowed, separated by newlines"></textarea>
+          <textarea id="idImportInput" placeholder="Multiple gxi:... tokens allowed, separated by newlines"></textarea>
           <div class="row">
             <button class="btn secondary" id="btnImportIdText">Import from text</button>
           </div>
@@ -105,10 +105,10 @@
           <div>
             <label>Upload/paste GXT message</label>
             <div class="row">
-              <input type="file" id="cipherFile" accept=".key,.gxt,.id" />
+              <input type="file" id="cipherFile" accept=".gxm" />
               <button class="btn secondary" id="clearCipher">Clear</button>
             </div>
-            <textarea id="cipherInput" placeholder="Paste GXT token (gxt:...)"></textarea>
+            <textarea id="cipherInput" placeholder="Paste GXT message (gxm:...)"></textarea>
           </div>
           <div class="row">
             <button class="btn" id="btnDecrypt">Decrypt</button>
@@ -128,16 +128,15 @@
             <div class="hint">This ID will receive the encrypted message.</div>
           </div>
           <div>
-            <label>Upload message (text file) or paste contents</label>
+            <label>Upload message (json file) or paste contents</label>
             <div class="row">
-              <input type="file" id="msgFile" accept=".key,.gxt,.id" />
+              <input type="file" id="msgFile" accept=".json" />
               <button class="btn secondary" id="clearMsg">Clear</button>
             </div>
-            <textarea id="msgInput" placeholder="Paste multiline message here..."></textarea>
+            <textarea id="msgInput" placeholder="Paste JSON payload here..."></textarea>
           </div>
           <div class="row">
             <button class="btn" id="btnEncrypt">Sign + encrypt message</button>
-            <button class="btn ghost" id="btnVerify">Verify only</button>
           </div>
           <div>
             <label>Output</label>

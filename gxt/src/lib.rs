@@ -23,10 +23,10 @@ use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
 
 pub use serde_json::{from_value, json, to_value};
 
-const PREFIX: &str = "gxt:";
+const PREFIX: &str = "gx";
 const SIGNATURE_DOMAIN: &[u8] = b"GXT";
 const MAX_RAW: usize = 64 * 1024;
-const VERSION: u8 = 2;
+const VERSION: u8 = 3;
 
 type Bytes32 = [u8; 32];
 type Bytes64 = [u8; 64];
@@ -100,9 +100,9 @@ impl FromStr for PayloadKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.trim() {
-            "id" => Ok(PayloadKind::Id),
-            "msg" => Ok(PayloadKind::Msg),
-            "key" => Ok(PayloadKind::Key),
+            "i" => Ok(PayloadKind::Id),
+            "m" => Ok(PayloadKind::Msg),
+            "k" => Ok(PayloadKind::Key),
             _ => Err(GxtError::UnknownPayloadKind),
         }
     }
@@ -222,11 +222,12 @@ pub fn make_id_card<M: Serialize + DeserializeOwned>(
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
 pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Envelope<P>, GxtError> {
-    let raw = decode_message(msg.trim())?;
+    let (kind, msg) = get_kind(msg)?;
+    let raw = decode_message(msg)?;
     let envelope_cbor: Value = serde_cbor::from_slice(&raw)?;
 
     let arr = match envelope_cbor {
-        Value::Array(a) if a.len() == 8 => a,
+        Value::Array(a) if a.len() == 7 => a,
         _ => return Err(GxtError::Invalid),
     };
 
@@ -242,10 +243,6 @@ pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Enve
     };
     let encryption_key = match values.next() {
         Some(Value::Text(t)) => parse_hex::<32>(&t)?,
-        _ => return Err(GxtError::Invalid),
-    };
-    let kind = match values.next() {
-        Some(Value::Text(t)) => PayloadKind::from_str(&t)?,
         _ => return Err(GxtError::Invalid),
     };
     let payload = match values.next() {
@@ -266,12 +263,8 @@ pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Enve
         _ => return Err(GxtError::Invalid),
     };
 
-    let canonical = get_canonical_representation(
-        &verification_key_bytes,
-        &encryption_key,
-        kind,
-        payload.clone(),
-    )?;
+    let canonical =
+        get_canonical_representation(&verification_key_bytes, &encryption_key, payload.clone())?;
     let expect = blake3::hash(&canonical);
     if id != *expect.as_bytes() {
         return Err(GxtError::BadId);
@@ -408,7 +401,6 @@ pub fn decrypt_message<P: Serialize + DeserializeOwned>(
 fn cbor_array(
     verification_key: &Bytes32,
     encryption_key: &Bytes32,
-    kind: PayloadKind,
     payload: Value,
     parent: Option<Bytes32>,
     id: Option<&Bytes32>,
@@ -418,7 +410,6 @@ fn cbor_array(
         Value::Integer(VERSION.into()),
         Value::Text(hex::encode(verification_key)),
         Value::Text(hex::encode(encryption_key)),
-        Value::Text(kind.to_string()),
         payload,
         Value::Text(parent.map(hex::encode).unwrap_or_default()),
         Value::Text(id.map(hex::encode).unwrap_or_default()),
@@ -430,18 +421,9 @@ fn cbor_array(
 fn get_canonical_representation(
     verification_key: &Bytes32,
     encryption_key: &Bytes32,
-    kind: PayloadKind,
     payload: Value,
 ) -> Result<Vec<u8>, GxtError> {
-    cbor_array(
-        verification_key,
-        encryption_key,
-        kind,
-        payload,
-        None,
-        None,
-        None,
-    )
+    cbor_array(verification_key, encryption_key, payload, None, None, None)
 }
 
 fn preimage(canonical: &[u8]) -> Vec<u8> {
@@ -460,7 +442,7 @@ fn make(
     let verification_key = key.verifying_key().to_bytes();
     let (_, encryption_key) = derive_enc_from_signing(key);
     let canonical =
-        get_canonical_representation(&verification_key, &encryption_key, kind, payload.clone())?;
+        get_canonical_representation(&verification_key, &encryption_key, payload.clone())?;
     if canonical.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }
@@ -479,6 +461,17 @@ fn make(
     )
 }
 
+fn make_prefix(kind: PayloadKind) -> String {
+    format!(
+        "{PREFIX}{}:",
+        match kind {
+            PayloadKind::Id => "i",
+            PayloadKind::Msg => "m",
+            PayloadKind::Key => "k",
+        }
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 fn encode_message(
     verification_key: &Bytes32,
@@ -492,7 +485,6 @@ fn encode_message(
     let envelope_cbor = cbor_array(
         verification_key,
         encryption_key,
-        kind,
         payload,
         parent,
         Some(id),
@@ -504,14 +496,19 @@ fn encode_message(
     let compressed_message = zstd::encode_all(&envelope_cbor[..], 3)?;
     Ok(format!(
         "{}{}",
-        PREFIX,
+        make_prefix(kind),
         bs58::encode(compressed_message).into_string()
     ))
 }
 
-fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
+fn get_kind(message: &str) -> Result<(PayloadKind, &str), GxtError> {
     let rest = message.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
-    let compressed_message = bs58::decode(rest).into_vec()?;
+    let (left, right) = rest.split_once(':').ok_or(GxtError::BadPrefix)?;
+    Ok((PayloadKind::from_str(left)?, right))
+}
+
+fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
+    let compressed_message = bs58::decode(message).into_vec()?;
     let raw = zstd::decode_all(&compressed_message[..])?;
     if raw.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
@@ -534,7 +531,7 @@ fn parse_hex<const SIZE: usize>(hex_string: &str) -> Result<[u8; SIZE], GxtError
 
 fn parse_key(key: &str) -> Result<SigningKey, GxtError> {
     if key.starts_with(PREFIX) {
-        let token = verify_message::<serde_json::Value>(key)?;
+        let token = verify_message::<serde_json::Value>(key.trim())?;
         Ok(from_value(token.payload)?)
     } else {
         Ok(SigningKey::from_bytes(&parse_hex::<32>(key)?))

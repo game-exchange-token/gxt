@@ -2,11 +2,12 @@
 
 ## Overview
 GXT (Game Exchange Token) is a compact, copy-paste friendly format for sharing encrypted messages between two parties.
-A GXT is a string token that starts with `gxt:` and encodes a compressed CBOR record with an embedded signature,
+A GXT is a string token that starts with `gx`, followed by a character that represents the payload kind + `":"` and
+encodes a compressed CBOR record with an embedded signature,
 payload and stable id.
 
 ```
-token = "gxt:" + Base58btc( zstd( CBOR([ version, verification_key, encryption_key, kind, payload, parent, id, signature ]) ) )
+token = "gxt:" + Base58btc( zstd( CBOR([ version, verification_key, encryption_key, payload, parent, id, signature ]) ) )
 ```
 
 - `version` — protocol version (currently `1`).
@@ -21,7 +22,7 @@ token = "gxt:" + Base58btc( zstd( CBOR([ version, verification_key, encryption_k
 The canonical CBOR encoding of the **same** 8-element array but with `parent`, `id` and `signature` set to empty strings:
 
 ```
-canonical = CBOR([ version, verification_key, encryption_key, kind, payload, parent="", id="", signature="" ])
+canonical = CBOR([ version, verification_key, encryption_key, payload, parent="", id="", signature="" ])
 id        = BLAKE3(canonical)
 signature = Ed25519(signing_key, b"GXT" || canonical)
 ```
@@ -39,11 +40,11 @@ The payload is any JSON value. The protocol does not interpret it.
 ## Verification
 To verify a token:
 1. Strip `gxt:` and Base58-decode, then zstd-decompress to raw CBOR.
-2. Parse as a 8-element CBOR array `[version, verification_key, encryption_key, kind, payload, parent, id, signature]`.
+2. Parse as a 8-element CBOR array `[version, verification_key, encryption_key, payload, parent, id, signature]`.
 3. Assert:
    - `version == 1`
    - `verification_key.len == 32`, `encryption_key.len == 32`, `parent.len == 32 || 0`, `id.len == 32 || 0`, `signature.len == 64 || 0`
-4. Rebuild `canonical = CBOR([version, verification_key, encryption_key, kind, payload, "", "", ""])` and check:
+4. Rebuild `canonical = CBOR([version, verification_key, encryption_key, payload, "", "", ""])` and check:
    - `BLAKE3(canonical) == id`
    - Verify Ed25519 signature over `b"GXT" + canonical` with public key `verification_key`.
 

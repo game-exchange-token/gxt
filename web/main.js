@@ -6,8 +6,9 @@ import init, {
   verify_message,
 } from "./pkg/gxt_wasm.js";
 
+const kinds = ["k", "i", "m"];
 const $ = (s) => document.querySelector(s);
-const stripPrefix = (key) => (key?.startsWith("gxt:") ? key.slice(4) : key);
+const stripPrefix = (key) => (kinds.some((k) => { key?.startsWith(`gx:`) }) ? key.slice(4) : key);
 const maskKey = (key) => {
   if (!key || typeof key !== "string") return "–";
   const k = stripPrefix(key);
@@ -75,7 +76,7 @@ function ensureKey() {
         });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "my.key";
+        a.download = "my.gxk";
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
@@ -109,7 +110,7 @@ function bindIdPanel() {
     const text = await readFileAsText(f);
     const tokens = extractTokens(text);
     // Dateiname ohne Endung als Label verwenden
-    const base = (f.name || "").replace(/\.(key|gxt|id)$/i, "");
+    const base = (f.name || "").replace(/\.gx(k|m|i)$/i, "");
     let added = 0;
     for (const tok of tokens) {
       try {
@@ -209,8 +210,12 @@ function bindIdPanel() {
 
 function extractTokens(text) {
   const tokens = [];
-  for (const part of String(text).split(/\s+/))
-    if (part.startsWith("gxt:")) tokens.push(part);
+  for (const part of String(text).split(/\s+/)) {
+    const good_prefix = kinds.some((k) => {
+      return part.startsWith(`gx${k}:`);
+    });
+    if (good_prefix) tokens.push(part);
+  }
   return tokens;
 }
 
@@ -277,7 +282,7 @@ function openContextMenu(x, y, card) {
   menu.style.top = `${y}px`;
 
   const exportBtn = document.createElement("button");
-  exportBtn.textContent = "Export (.id.gxt)";
+  exportBtn.textContent = "Export (.gxi)";
   exportBtn.addEventListener("click", async () => {
     await exportIdCard(card);
     closeContextMenu();
@@ -331,7 +336,7 @@ async function exportIdCard(card) {
   const base = (card.label || "id")
     .replace(/\s*\([^)]*\)\s*$/, "")
     .replace(/\s+/g, "_");
-  a.download = `${base}.id`;
+  a.download = `${base}.gxi`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => {
