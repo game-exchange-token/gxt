@@ -3,6 +3,6 @@
 *.key
 *.id
 *.gxt
-docs/pkg/*
-!docs/pkg/.gitkeep
 site/
+web/pkg/*
+!web/pkg/.gitkeep

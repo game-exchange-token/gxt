@@ -25,7 +25,7 @@ jobs:
       - name: Install system dependencies (clang/llvm)
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm imagemagick librsvg2-bin
+          sudo apt-get install -y imagemagick librsvg2-bin
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -35,36 +35,33 @@ jobs:
       - name: Install wasm-bindgen-cli
         run: cargo install wasm-bindgen-cli
 
-      - name: Build gxt-wasm (wasm32)
-        env:
-          CC_wasm32_unknown_unknown: clang
-          CC_wasm32-unknown-unknown: clang
+      - name: Build gxt-wasm
         run: |
           cargo build -p gxt-wasm --release --target wasm32-unknown-unknown
 
       - name: Generate web bindings
         run: |
-          mkdir -p docs/pkg
+          mkdir -p web/pkg
           wasm-bindgen --target web --no-typescript \
-            --out-dir docs/pkg \
+            --out-dir web/pkg \
             target/wasm32-unknown-unknown/release/gxt_wasm.wasm
-          touch docs/.nojekyll
+          touch web/.nojekyll
           # Build favicon.ico from svg (multiple sizes)
-          rsvg-convert -w 256 -h 256 docs/favicon.svg -o /tmp/favicon-256.png
-          rsvg-convert -w 128 -h 128 docs/favicon.svg -o /tmp/favicon-128.png
-          rsvg-convert -w 32 -h 32 docs/favicon.svg -o /tmp/favicon-32.png
-          convert /tmp/favicon-256.png /tmp/favicon-128.png /tmp/favicon-32.png docs/favicon.ico
+          rsvg-convert -w 256 -h 256 web/favicon.svg -o /tmp/favicon-256.png
+          rsvg-convert -w 128 -h 128 web/favicon.svg -o /tmp/favicon-128.png
+          rsvg-convert -w 32 -h 32 web/favicon.svg -o /tmp/favicon-32.png
+          convert /tmp/favicon-256.png /tmp/favicon-128.png /tmp/favicon-32.png web/favicon.ico
 
-      - name: Build site structure (root = app, /docs = README)
+      - name: Build site structure (root = app, /web = README)
         run: |
           rm -rf site
           mkdir -p site
-          # Copy SPA (current app lives in docs/) to site root
-          cp -R docs/* site/
-          # Generate docs/index.html from README.md
+          # Copy SPA (current app lives in web/) to site root
+          cp -R web/* site/
+          # Generate web/index.html from README.md
           sudo apt-get update && sudo apt-get install -y pandoc
-          mkdir -p site/docs
-          pandoc -f gfm -t html5 README.md -o site/docs/index.html \
+          mkdir -p site/web
+          pandoc -f gfm -t html5 README.md -o site/web/index.html \
             --metadata title="GXT — Documentation" \
             -s
           # Ensure GitHub Pages doesn't run Jekyll on artifact

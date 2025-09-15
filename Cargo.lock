@@ -2279,6 +2279,7 @@ version = "2.7.0"
 dependencies = [
  "getrandom 0.2.16",
  "gxt",
+ "serde",
  "serde-wasm-bindgen",
  "serde_json",
  "wasm-bindgen",

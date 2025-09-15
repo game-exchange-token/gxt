@@ -69,7 +69,7 @@ function ensureKey() {
     $("#maskedKey").textContent = maskKey(currentKey);
     // Nutzer fragen und automatisch downloaden
     try {
-      if (confirm("Neuen Key herunterladen?")) {
+      if (confirm("Download New Key?")) {
         const blob = new Blob([currentKey], {
           type: "text/plain;charset=utf-8",
         });
@@ -117,7 +117,7 @@ function bindIdPanel() {
         added++;
       } catch {}
     }
-    if (!added) alert("Keine gültige ID-Card gefunden.");
+    if (!added) alert("No valid ID card found.");
     renderIdList();
     refreshIdSelect();
   });
@@ -134,7 +134,7 @@ function bindIdPanel() {
           meta = JSON.parse(metaText);
         } catch (err) {
           $("#outputId").value =
-            "Fehler (Meta JSON): " + (err?.message || String(err));
+            "Error (Meta JSON): " + (err?.message || String(err));
           return;
         }
       }
@@ -145,7 +145,7 @@ function bindIdPanel() {
       renderIdList();
       refreshIdSelect();
     } catch (err) {
-      $("#outputId").value = "Fehler (ID): " + (err?.message || String(err));
+      $("#outputId").value = "Error (ID): " + (err?.message || String(err));
     }
   });
 
@@ -201,7 +201,7 @@ function bindIdPanel() {
       renderIdList();
       refreshIdSelect();
     } catch (err) {
-      alert("Ungültiges Backup: " + (err?.message || String(err)));
+      alert("Invalid Backup: " + (err?.message || String(err)));
     }
     e.target.value = "";
   });
@@ -216,7 +216,7 @@ function extractTokens(text) {
 
 async function addIdCard(value, label) {
   const env = verify_message(value);
-  if (env.kind !== "id" && env.kind !== "Id") throw new Error("Kein ID-Record");
+  if (env.kind !== "id" && env.kind !== "Id") throw new Error("Invalid Payload Kind");
   const short = String(env.id || "").slice(0, 8);
   const name = label || (env?.payload?.name ?? "ID");
   // Duplikate vermeiden
@@ -277,14 +277,14 @@ function openContextMenu(x, y, card) {
   menu.style.top = `${y}px`;
 
   const exportBtn = document.createElement("button");
-  exportBtn.textContent = "Exportieren (.id)";
+  exportBtn.textContent = "Export (.id.gxt)";
   exportBtn.addEventListener("click", async () => {
     await exportIdCard(card);
     closeContextMenu();
   });
 
   const copyBtn = document.createElement("button");
-  copyBtn.textContent = "In Zwischenablage kopieren";
+  copyBtn.textContent = "Copy to clipboard";
   copyBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(card.value);
@@ -293,9 +293,9 @@ function openContextMenu(x, y, card) {
   });
 
   const delBtn = document.createElement("button");
-  delBtn.textContent = "Löschen";
+  delBtn.textContent = "Delete";
   delBtn.addEventListener("click", () => {
-    if (confirm("Diese ID-Card wirklich löschen?")) deleteIdCard(card.id);
+    if (confirm("Do you really want to delete this ID card??")) deleteIdCard(card.id);
     closeContextMenu();
   });
 
@@ -357,7 +357,7 @@ $("#btnImportIdText")?.addEventListener("click", async () => {
   }
   renderIdList();
   refreshIdSelect();
-  if (!added) alert("Keine gültige ID-Card im Text gefunden.");
+  if (!added) alert("No valid ID card found in text.");
 });
 
 function refreshIdSelect() {
@@ -422,7 +422,7 @@ function bindCrypt() {
       $("#outputCrypt").value = JSON.stringify(v, null, 2);
     } catch (err) {
       $("#outputCrypt").value =
-        "Fehler (Verify): " + (err?.message || String(err));
+        "Error (Verify): " + (err?.message || String(err));
     }
   });
 
@@ -434,7 +434,7 @@ function bindCrypt() {
       const idToUse = chosen?.value || currentId || "";
       if (!idToUse) {
         $("#outputCrypt").value =
-          "Bitte zuerst eine ID-Card erstellen/importieren.";
+          "Please import an ID card first.";
         return;
       }
       const raw = ($("#msgInput").value || "").trim();
@@ -443,7 +443,7 @@ function bindCrypt() {
       $("#outputCrypt").value = token;
     } catch (err) {
       $("#outputCrypt").value =
-        "Fehler (Encrypt): " + (err?.message || String(err));
+        "Error (Encrypt): " + (err?.message || String(err));
     }
   });
 }
@@ -465,20 +465,21 @@ function bindDecrypt() {
       ensureKey();
       const token = ($("#cipherInput").value || "").trim();
       if (!token) {
-        appendChat("Keine verschlüsselte Nachricht.");
+        setChat("Not an encrypted message");
         return;
       }
       const env = decrypt_message(token, currentKey);
-      appendChat(JSON.stringify(env.payload, null, 2));
+      setChat(JSON.stringify(JSON.parse(env.payload), null, 2));
     } catch (err) {
-      appendChat("Fehler (Decrypt): " + (err?.message || String(err)));
+      setChat("Error (Decrypt): " + (err?.message || String(err)));
     }
   });
 }
 
-function appendChat(line) {
+function setChat(line) {
+  console.log(line);
   const box = $("#chatBox");
-  box.value += (box.value ? "\n" : "") + line;
+  box.value = line;
   box.scrollTop = box.scrollHeight;
 }
 
