@@ -178,14 +178,22 @@ impl<P: Serialize + DeserializeOwned> fmt::Display for Envelope<P> {
     }
 }
 
+/// The kind of key
+pub enum KeyKind {
+    /// Plain text, no gxt token around it
+    Raw,
+    /// Gxt encoded
+    Gxt,
+}
+
 /// Creates a private key for a peer.
 pub fn make_key() -> String {
     let key = SigningKey::generate(&mut OsRng);
+    let key_json = serde_json::to_value(&key).expect("Should never happen.");
     make(
         &key,
         PayloadKind::Key,
-        serde_json::from_value(serde_json::Value::String(hex::encode(key.as_bytes())))
-            .expect("Should never happen."),
+        serde_cbor::value::to_value(&key_json).expect("Should never happen."),
         None,
     )
     .expect("Should never happen.")
@@ -351,7 +359,7 @@ pub fn decrypt_message<P: Serialize + DeserializeOwned>(
 ) -> Result<Envelope<P>, GxtError> {
     let mut envelope = verify_message::<Value>(message.trim())?;
 
-    let key = SigningKey::from_bytes(&parse_hex::<32>(key.trim())?);
+    let key = parse_key(key)?;
     let Value::Map(map) = &envelope.payload else {
         return Err(GxtError::Invalid);
     };
@@ -526,9 +534,8 @@ fn parse_hex<const SIZE: usize>(hex_string: &str) -> Result<[u8; SIZE], GxtError
 
 fn parse_key(key: &str) -> Result<SigningKey, GxtError> {
     if key.starts_with(PREFIX) {
-        let token = verify_message(key)?;
-        let hex: String = from_value(dbg!(token.payload))?;
-        Ok(SigningKey::from_bytes(&parse_hex::<32>(&hex)?))
+        let token = verify_message::<serde_json::Value>(key)?;
+        Ok(from_value(token.payload)?)
     } else {
         Ok(SigningKey::from_bytes(&parse_hex::<32>(key)?))
     }

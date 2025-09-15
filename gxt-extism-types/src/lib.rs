@@ -15,6 +15,7 @@ pub struct IdCardRequest {
 pub enum PayloadKind {
     Id,
     Msg,
+    Key,
 }
 
 impl From<gxt::PayloadKind> for PayloadKind {
@@ -22,6 +23,7 @@ impl From<gxt::PayloadKind> for PayloadKind {
         match value {
             gxt::PayloadKind::Id => PayloadKind::Id,
             gxt::PayloadKind::Msg => PayloadKind::Msg,
+            gxt::PayloadKind::Key => PayloadKind::Key,
         }
     }
 }
