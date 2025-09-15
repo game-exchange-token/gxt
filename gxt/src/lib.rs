@@ -85,7 +85,7 @@ pub enum GxtError {
 }
 
 /// What kind of payload was sent
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum PayloadKind {
     /// ID card
     Id,

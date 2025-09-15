@@ -1,0 +1,79 @@
+import { ListView, Button, VerticalBox, HorizontalBox, Button, Button } from "std-widgets.slint";
+
+export struct Envelope {
+    version: int,
+    verification_key: string,
+    encryption_key: string,
+    kind: string,
+    payload: string,
+    parent: string,
+    id: string,
+    signature: string,
+}
+
+struct Element {
+    name: string,
+    value: string,
+}
+
+component KVList inherits Window {
+    in property <[Element]> elements;
+    in property <string> payload;
+    VerticalBox {
+        for element in root.elements: Text {
+            text: element.name + ": " + element.value;
+        }
+        Text {
+            text: "payload:";
+        }
+
+        Text {
+            text: payload;
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    in-out property <string> token_text;
+    in property <Envelope> envelope;
+    in property <bool> can_decrypt;
+    callback request-load();
+    callback request-decrypt();
+    function element(name: string, value: string) -> Element {
+        { name: name, value: value }
+    }
+    MenuBar {
+        Menu {
+            title: "Token";
+            MenuItem {
+                title: "Load";
+                activated => {
+                    request-load();
+                }
+            }
+
+            MenuItem {
+                title: "Decrypt";
+                enabled: can_decrypt;
+                activated => {
+                    request-decrypt();
+                }
+            }
+        }
+    }
+
+    VerticalBox {
+        KVList {
+            elements: [
+                element("Version", envelope.version),
+                element("Verification Key", envelope.verification-key),
+                element("Encryption Key", envelope.encryption-key),
+                element("ID", envelope.id),
+                element("kind", envelope.kind),
+                element("parent", envelope.parent),
+                element("signature", envelope.signature),
+            ];
+            payload: envelope.payload;
+        }
+    }
+}

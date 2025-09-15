@@ -7,8 +7,9 @@ members = [
     "gxt-cli",
     "gxt-extism-types",
     "gxt-wasm",
+    "gxt-viewer",
 ]
-exclude = ["gxt-api-extism"]
+exclude = ["gxt-api-extism", "gxt-api-c", "gxt-wasm"]
 default-members = ["gxt-cli"]
 
 [workspace.package]
@@ -27,7 +28,10 @@ serde = { version = "1", features = ["derive"] }
 serde_cbor = "0.11"
 serde_json = { version = "1", features = ["preserve_order"] }
 
+[profile.dev.package."*"]
+opt-level = 2
+
 [profile.release]
 lto = true
-opt-level = "z"
+opt-level = 2
 codegen-units = 1
