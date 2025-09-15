@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GXT — Game Exchange Token</title>
+  <link rel="icon" href="./favicon.ico" sizes="any" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <header style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;">
+      <div class="title" style="grid-column:1;">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>GXT — Game Exchange Token</h1>
+          <div class="muted">Signed, compressed and encrypted tokens in the browser</div>
+        </div>
+      </div>
+      <div class="muted" style="grid-column:2; text-align:center; line-height:1.2;">
+        This page belongs to the
+        <a href="https://github.com/game-exchange-token/gxt" target="_blank" rel="noopener"
+          style="color:inherit; text-decoration:underline;">Repository</a>
+        by
+        <a href="https://github.com/hardliner66" target="_blank" rel="noopener"
+          style="color:inherit; text-decoration:underline;">@hardliner66</a>
+      </div>
+      <div style="grid-column:3; display:flex; align-items:center; gap:8px; justify-content:flex-end;">
+        <button class="btn ghost" id="btnExportBackup">Export profile</button>
+        <button class="btn ghost" id="btnImportBackup">Import profile</button>
+        <input type="file" id="backupFile" accept=".json" hidden />
+      </div>
+    </header>
+
+    <section class="card" aria-label="Your key">
+      <div class="row">
+        <div>
+          <label>Upload your key (.key)</label>
+          <input type="file" id="keyFile" accept=".key,.gxt,.id" />
+          <div class="hint">File contains either a raw 32-byte private key (hex) or a GXT key token.</div>
+          <div class="row" style="margin-top:8px;">
+            <button class="btn secondary" id="btnGenerateKey">Generate .key</button>
+          </div>
+        </div>
+        <div>
+          <label>Masked key (without prefix)</label>
+          <div id="maskedKey" class="keyline">–</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="row" style="align-items:flex-start; margin-top:16px;">
+      <aside class="card" style="flex:0 0 300px; max-width:100%;">
+        <div class="row" style="align-items:center; justify-content:space-between;">
+          <strong>ID cards</strong>
+          <span class="pill" id="idCount">0</span>
+        </div>
+        <div style="margin-top:10px;">
+          <input type="file" id="idFile" accept=".key,.gxt,.id" />
+          <div class="hint">Import an ID card file (gxt:...)</div>
+        </div>
+        <div style="margin-top:10px;">
+          <label>Paste IDs (text)</label>
+          <textarea id="idImportInput" placeholder="Multiple gxt:... tokens allowed, separated by newlines"></textarea>
+          <div class="row">
+            <button class="btn secondary" id="btnImportIdText">Import from text</button>
+          </div>
+        </div>
+        <div id="idList" style="margin-top:12px; display:grid; gap:8px;"></div>
+      </aside>
+
+      <main class="card" style="flex:1 1 0;">
+        <div class="tabs" role="tablist" aria-label="Modus">
+          <div id="tab-id" class="tab active" data-tab="id" role="tab" aria-selected="true">ID card</div>
+          <div id="tab-decrypt" class="tab disabled" data-tab="decrypt" role="tab" aria-selected="false"
+            aria-disabled="true">Decrypt</div>
+          <div id="tab-crypt" class="tab disabled" data-tab="crypt" role="tab" aria-selected="false"
+            aria-disabled="true">Crypt</div>
+        </div>
+
+        <section id="panel-id" class="grid" role="tabpanel" aria-labelledby="tab-id" style="margin-top:12px;">
+          <div>
+            <label>Name (optional)</label>
+            <input type="text" id="idLabel" placeholder="e.g. Alice@PC" />
+          </div>
+          <div>
+            <label>Meta (JSON)</label>
+            <textarea id="idMeta" placeholder='{"name":"Alice","note":"workstation","level":3}'></textarea>
+            <div class="hint">Only valid JSON is accepted. Leave empty for {}.</div>
+          </div>
+          <div class="row">
+            <button class="btn" id="btnMakeId">Create ID card from key</button>
+            <button class="btn ghost" id="btnCopyLastId">Copy last ID</button>
+          </div>
+          <div>
+            <label>Result</label>
+            <textarea id="outputId" readonly placeholder="The generated ID card will appear here..."></textarea>
+          </div>
+        </section>
+
+        <section id="panel-decrypt" class="grid" role="tabpanel" aria-labelledby="tab-decrypt" style="margin-top:12px;"
+          hidden>
+          <div>
+            <label>Upload/paste GXT message</label>
+            <div class="row">
+              <input type="file" id="cipherFile" accept=".key,.gxt,.id" />
+              <button class="btn secondary" id="clearCipher">Clear</button>
+            </div>
+            <textarea id="cipherInput" placeholder="Paste GXT token (gxt:...)"></textarea>
+          </div>
+          <div class="row">
+            <button class="btn" id="btnDecrypt">Decrypt</button>
+          </div>
+          <div>
+            <label>Chat box</label>
+            <textarea id="chatBox" placeholder="Verified/decrypted content appears here..." readonly></textarea>
+          </div>
+        </section>
+
+        <section id="panel-crypt" class="grid" role="tabpanel" aria-labelledby="tab-crypt" style="margin-top:12px;"
+          hidden>
+          <div>
+            <label>Select recipient ID</label>
+            <select id="idSelect"
+              style="width:100%; padding:10px 12px; border-radius:10px; background:#0e1530; color:var(--text); border:1px solid rgba(255,255,255,.08);"></select>
+            <div class="hint">This ID will receive the encrypted message.</div>
+          </div>
+          <div>
+            <label>Upload message (text file) or paste contents</label>
+            <div class="row">
+              <input type="file" id="msgFile" accept=".key,.gxt,.id" />
+              <button class="btn secondary" id="clearMsg">Clear</button>
+            </div>
+            <textarea id="msgInput" placeholder="Paste multiline message here..."></textarea>
+          </div>
+          <div class="row">
+            <button class="btn" id="btnEncrypt">Sign + encrypt message</button>
+            <button class="btn ghost" id="btnVerify">Verify only</button>
+          </div>
+          <div>
+            <label>Output</label>
+            <textarea id="outputCrypt" readonly placeholder="Output appears here..."></textarea>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="footer">© 2025 GXT · Runs locally in your browser — no data leaves your device</div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+
+</html>

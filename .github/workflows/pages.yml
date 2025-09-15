@@ -1,0 +1,85 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies (clang/llvm)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm imagemagick librsvg2-bin
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
+      - name: Build gxt-wasm (wasm32)
+        env:
+          CC_wasm32_unknown_unknown: clang
+          CC_wasm32-unknown-unknown: clang
+        run: |
+          cargo build -p gxt-wasm --release --target wasm32-unknown-unknown
+
+      - name: Generate web bindings
+        run: |
+          mkdir -p docs/pkg
+          wasm-bindgen --target web --no-typescript \
+            --out-dir docs/pkg \
+            target/wasm32-unknown-unknown/release/gxt_wasm.wasm
+          touch docs/.nojekyll
+          # Build favicon.ico from svg (multiple sizes)
+          rsvg-convert -w 256 -h 256 docs/favicon.svg -o /tmp/favicon-256.png
+          rsvg-convert -w 128 -h 128 docs/favicon.svg -o /tmp/favicon-128.png
+          rsvg-convert -w 32 -h 32 docs/favicon.svg -o /tmp/favicon-32.png
+          convert /tmp/favicon-256.png /tmp/favicon-128.png /tmp/favicon-32.png docs/favicon.ico
+
+      - name: Build site structure (root = app, /docs = README)
+        run: |
+          rm -rf site
+          mkdir -p site
+          # Copy SPA (current app lives in docs/) to site root
+          cp -R docs/* site/
+          # Generate docs/index.html from README.md
+          sudo apt-get update && sudo apt-get install -y pandoc
+          mkdir -p site/docs
+          pandoc -f gfm -t html5 README.md -o site/docs/index.html \
+            --metadata title="GXT — Documentation" \
+            -s
+          # Ensure GitHub Pages doesn't run Jekyll on artifact
+          touch site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
