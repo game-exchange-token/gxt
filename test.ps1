@@ -27,26 +27,26 @@ cargo build -p gxt-cli
 
 Write-Host "Create keys..."
 # Create keys for communication
-cargo run -p gxt-cli -q -- keygen --out tmp/alice.key
-cargo run -p gxt-cli -q -- keygen --out tmp/bob.key
+cargo run -p gxt-cli -q -- keygen --out tmp/alice.key.gxt
+cargo run -p gxt-cli -q -- keygen --out tmp/bob.key.gxt
 
 Write-Host ""
 Write-Host "Create ID Card for Bob..."
 
 # Create an id card for bob
-Write-Output '{"name":"Bob"}' | cargo run -p gxt-cli -q -- id tmp/bob.key --out tmp/bob.id --meta -
+Write-Output '{"name":"Bob"}' | cargo run -p gxt-cli -q -- id tmp/bob.key.gxt --out tmp/bob.id.gxt --meta -
 
 Write-Host ""
 Write-Host "Verify ID Card for Bob..."
 
 # Verify if the id card is valid and signed
-cargo run -p gxt-cli -q -- verify --file tmp/bob.id > tmp/bob.id.verified
+cargo run -p gxt-cli -q -- verify --file tmp/bob.id.gxt > tmp/bob.id.verified.gxt
 
 Write-Host ""
 Write-Host "Create Message for Bob..."
 
 # Create a message for bob using their id card and your own key
-cargo run -p gxt-cli -q -- msg --key tmp/alice.key --to tmp/bob.id --out tmp/msg_to_bob.gxt --payload '{"hello":"world"}'
+cargo run -p gxt-cli -q -- msg --key tmp/alice.key.gxt --to tmp/bob.id.gxt --out tmp/msg_to_bob.gxt --payload '{"hello":"world"}'
 
 Write-Host ""
 Write-Host "Verify Message..."
@@ -58,4 +58,4 @@ Write-Host ""
 Write-Host "Decrypt Message with Bobs Key..."
 
 # Decrypt the message using bobs key
-cargo run -p gxt-cli -q -- decrypt --key tmp/bob.key --file tmp/msg_to_bob.gxt > tmp/msg_to_bob.decrypted
+cargo run -p gxt-cli -q -- decrypt --key tmp/bob.key.gxt --file tmp/msg_to_bob.gxt > tmp/msg_to_bob.decrypted
