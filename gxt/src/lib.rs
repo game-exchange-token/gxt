@@ -214,7 +214,7 @@ pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Enve
     let mut values = arr.into_iter();
 
     let version = match values.next() {
-        Some(Value::Integer(i)) if i == VERSION.into() => 1u8,
+        Some(Value::Integer(i)) if i == VERSION.into() => VERSION,
         _ => return Err(GxtError::Invalid),
     };
     let verification_key_bytes = match values.next() {
@@ -493,7 +493,7 @@ fn encode_message(
 fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
     let rest = message.strip_prefix(PREFIX).ok_or(GxtError::BadPrefix)?;
     let compressed_message = bs58::decode(rest).into_vec()?;
-    let raw = zstd::encode_all(&compressed_message[..], 3)?;
+    let raw = zstd::decode_all(&compressed_message[..])?;
     if raw.len() > MAX_RAW {
         return Err(GxtError::TooLarge);
     }
