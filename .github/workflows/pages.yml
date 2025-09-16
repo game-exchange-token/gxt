@@ -31,33 +31,25 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
 
-      - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli
-
-      - name: Build gxt-wasm
-        run: |
-          cd gxt-wasm
-          cargo build --release --target wasm32-unknown-unknown -F wee_alloc
+      - name: Install wasm-pack
+        run: cargo binstall -y --disable-telemetry wasm-pack wasm-opt
 
       - name: Generate web bindings
         run: |
-          mkdir -p web/pkg
-          wasm-bindgen --target web --no-typescript \
-            --out-dir web/pkg \
-            target/wasm32-unknown-unknown/release/gxt_wasm.wasm
+          cd gxt-wasm
+          wasm-pack build --target web --release --no-typescript -d ../web/pkg/ . -F wee_alloc
+
+      - name: Convert Icons
+        run: |
           touch web/.nojekyll
           # Build favicon.ico from svg (multiple sizes)
           rsvg-convert -w 256 -h 256 web/favicon.svg -o /tmp/favicon-256.png
           rsvg-convert -w 128 -h 128 web/favicon.svg -o /tmp/favicon-128.png
           rsvg-convert -w 32 -h 32 web/favicon.svg -o /tmp/favicon-32.png
           convert /tmp/favicon-256.png /tmp/favicon-128.png /tmp/favicon-32.png web/favicon.ico
-
-      - name: Install wasm-opt
-        run: cargo install wasm-opt
-
-      - name: Optimizing WASM
-        run: wasm-opt -all -Oz -o web/pkg/gxt_wasm_bg.wasm web/pkg/gxt_wasm_bg.wasm
 
       - name: Build site structure (root = app, /web = README)
         run: |
