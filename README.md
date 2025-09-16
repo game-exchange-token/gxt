@@ -21,6 +21,7 @@ For details check out [`spec.md`](https://github.com/game-exchange-token/gxt/blo
 - [C API](#c-api)
 - [Extism API](#extism-api)
 - [C# API](#c-api-1)
+- [Special Thanks](#special-thanks)
 
 ## Rationale
 I was thinking about how it could be possible to add trading
@@ -222,3 +223,6 @@ as a host language by Extism.
 Ready to use C# DLL, which loads the library through Extism, so we don't have to deploy the native library.
 
 Also available on nuget: https://www.nuget.org/packages/gxt-csharp
+
+## Special Thanks
+- [Daniel Kempf](https://kempfdaniel.de), for creating the UI for github pages
