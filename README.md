@@ -2,12 +2,14 @@
 
 Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games.
 
-For details check out [`spec.md`](https://github.com/hardliner66/gxt/blob/main/spec.md).
+For details check out [`spec.md`](https://github.com/game-exchange-token/gxt/blob/main/spec.md).
 
 - [Rationale](#rationale)
 - [About](#about)
+- [Playground](#playground)
 - [Install](#install)
 - [Demo](#demo)
+- [File Extensions \& Prefixes](#file-extensions--prefixes)
 - [CLI](#cli)
   - [General](#general)
   - [Keygen](#keygen)
@@ -15,6 +17,7 @@ For details check out [`spec.md`](https://github.com/hardliner66/gxt/blob/main/s
   - [Verify](#verify)
   - [Msg](#msg)
   - [Decrypt](#decrypt)
+  - [UI](#ui)
 - [C API](#c-api)
 - [Extism API](#extism-api)
 - [C# API](#c-api-1)
@@ -48,43 +51,53 @@ Because this is intended to be easy to integrate by mod authors, a library and c
 Both are written in rust. There is also a wrapper that exposes a C API called `gxt-api-c`, a wrapper that provides
 the API as an [Extism](https://extism.org/) plugin and a C# wrapper (based on Extism).
 
+## Playground
+There is a web UI for trying it out which can be found here: [GXT Playground](https://game-exchange-token.github.io/gxt)
+
 ## Install
 ```bash
 cargo install gxt-cli
 
-# or if you want the UI as well
+# or if you want a simple (read-only) UI as well
 cargo install gxt-cli -F ui
 ```
 
 ## Demo
 ```bash
 # Create keys for communication
-gxt keygen --out alice.key
-gxt keygen --out bob.key
+gxt keygen --out alice.gxk
+gxt keygen --out bob.gxk
 
 # Create an id card for bob
-echo '{"name":"Bob"}' | gxt id bob.key --out bob.id --meta -
+echo '{"name":"Bob"}' | gxt id bob.gxk --out bob.gxi --meta -
 
 # Verify if the id card is valid and signed
-gxt verify --file bob.id
+gxt verify --file bob.gxi
 
 # Create a message for bob using their id card and your own key
-gxt msg --key alice.key --to bob.id --out msg_to_bob.gxt --payload '{"hello":"world"}'
+gxt msg --key alice.gxk --to bob.gxi --out msg_to_bob.gxm --payload '{"hello":"world"}'
 
 # Verify if the message is valid and signed
-gxt verify --file msg_to_bob.gxt
+gxt verify --file msg_to_bob.gxm
 
 # Decrypt the message using bobs key
-gxt decrypt --key bob.key --file msg_to_bob.gxt
+gxt decrypt --key bob.gxk --file msg_to_bob.gxm
 
 # Try decrypting a message with a key its not intended for
-gxt keygen --out charlie.key
-gxt decrypt --key charlie.key --file msg_to_bob.gxt
+gxt keygen --out charlie.gxk
+gxt decrypt --key charlie.gxk --file msg_to_bob.gxm
 ```
+
+## File Extensions & Prefixes
+| Token Kind | Prefix | File Extension | Description                                                                                                                                                                                        |
+| ---------- | ------ | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Key        | `gxk:` | `.gxk`         | A private key, used to sign messages. **DO NOT SHARE**. These are supposed to be private. If you want to exchange data with someone, send them an ID card.                                         |
+| Id         | `gxi:` | `.gxi`         | An identity card, containing the necessary data to encrypt messages for the owner of the ID card. _This is derived from the private key._                                                          |
+| Message    | `gxm:` | `.gxm`         | A message that is signed with a key and encrypted for a specified ID card. Once generated, the data inside can only be decrypted by the private key that was used to derive the specified ID card. |
 
 ## CLI
 ### General
-```txt
+```sh
 GXT (Game Exchange Token)
 
 Usage: gxt <COMMAND>
@@ -95,6 +108,8 @@ Commands:
   verify   Verify a message
   msg      Create an encrypted message
   decrypt  Decrypt a message
+  # This command is only available if the cli was installed with the "ui" feature
+  ui       Show a simple UI for opening messages
   help     Print this message or the help of the given subcommand(s)
 
 Options:
@@ -103,7 +118,7 @@ Options:
 ```
 
 ### Keygen
-```txt
+```sh
 Generates a new private key
 
 Usage: gxt keygen --out <OUT>
@@ -114,7 +129,7 @@ Options:
 ```
 
 ### Id
-```txt
+```sh
 Generate an ID card containing the data about a peer
 
 Usage: gxt id [OPTIONS] --meta <META> <KEY>
@@ -129,10 +144,10 @@ Options:
 ```
 
 ### Verify
-```txt
+```sh
 Verify a message
 
-Usage: gxt.exe verify [OPTIONS] <--msg <MSG>|--file <FILE>>
+Usage: gxt verify [OPTIONS] <--msg <MSG>|--file <FILE>>
 
 Options:
   -m, --msg <MSG>    The string token containing the message. Pass - to read from stdin
@@ -142,25 +157,25 @@ Options:
 ```
 
 ### Msg
-```txt
+```sh
 Create an encrypted message
 
 Usage: gxt msg [OPTIONS] --key <KEY> --to <TO> --payload <PAYLOAD>
 
 Options:
-  -k, --key <KEY>         The key of the sender
-  -t, --to <TO>           The id card of the recipient
-  -p, --parent <PARENT>   The parent of this message
-  --payload <PAYLOAD> The payload of the message. Can be anything, but must be set. Pass - to read from stdin
-  -o, --out <OUT>         Where to store the message token
-  -h, --help              Print help
+  -k, --key <KEY>          The key of the sender
+  -t, --to <TO>            The id card of the recipient
+      --parent <PARENT>    The parent of this message
+  -p, --payload <PAYLOAD>  The payload of the message. Can be anything, but must be set. Pass - to read from stdin
+  -o, --out <OUT>          Where to store the message token
+  -h, --help               Print help
 ```
 
 ### Decrypt
-```txt
+```sh
 Decrypt a message
 
-Usage: gxt.exe decrypt [OPTIONS] --key <KEY> <--msg <MSG>|--file <FILE>>
+Usage: gxt decrypt [OPTIONS] --key <KEY> <--msg <MSG>|--file <FILE>>
 
 Options:
   -k, --key <KEY>    The key of the receiver
@@ -170,13 +185,29 @@ Options:
   -h, --help         Print help
 ```
 
+### UI
+**Only available if cli was installed with the "ui" feature enabled!**
+
+```sh
+Show a simple UI for opening messages
+
+Usage: gxt.exe ui [PATH] [KEY]
+
+Arguments:
+  [PATH]  The message to decode
+  [KEY]   The key, if the message is encrypted
+
+Options:
+  -h, --help  Print help
+```
+
 ## C API
 To use the C API, clone the repository and then build the crate `gxt-api-c`.
 This will create a dynamic and a static library, as well as the corresponding include header,
 inside the target directory.
 
 ```bash
-git clone https://github.com/hardliner66/gxt
+git clone https://github.com/game-exchange-token/gxt
 cd gxt
 cargo build -p gxt-api-c --release
 cd target/release
@@ -189,3 +220,5 @@ as a host language by Extism.
 
 ## C# API
 Ready to use C# DLL, which loads the library through Extism, so we don't have to deploy the native library.
+
+Also available on nuget: https://www.nuget.org/packages/gxt-csharp
