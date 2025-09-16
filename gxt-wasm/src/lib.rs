@@ -1,4 +1,5 @@
 #[global_allocator]
+#[cfg(feature = "wee_alloc")]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use serde::{Deserialize, Serialize};

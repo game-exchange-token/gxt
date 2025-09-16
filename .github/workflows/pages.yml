@@ -38,7 +38,7 @@ jobs:
       - name: Build gxt-wasm
         run: |
           cd gxt-wasm
-          cargo build --release --target wasm32-unknown-unknown
+          cargo build --release --target wasm32-unknown-unknown -F wee_alloc
 
       - name: Generate web bindings
         run: |
@@ -52,6 +52,12 @@ jobs:
           rsvg-convert -w 128 -h 128 web/favicon.svg -o /tmp/favicon-128.png
           rsvg-convert -w 32 -h 32 web/favicon.svg -o /tmp/favicon-32.png
           convert /tmp/favicon-256.png /tmp/favicon-128.png /tmp/favicon-32.png web/favicon.ico
+
+      - name: Install wasm-opt
+        run: cargo install wasm-opt
+
+      - name: Optimizing WASM
+        run: wasm-opt -all -Oz -o web/pkg/gxt_wasm_bg.wasm web/pkg/gxt_wasm_bg.wasm
 
       - name: Build site structure (root = app, /web = README)
         run: |
