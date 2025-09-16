@@ -1,3 +1,6 @@
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
