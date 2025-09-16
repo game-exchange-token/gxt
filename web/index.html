@@ -74,10 +74,12 @@
       <main class="card" style="flex:1 1 0;">
         <div class="tabs" role="tablist" aria-label="Modus">
           <div id="tab-id" class="tab active" data-tab="id" role="tab" aria-selected="true">ID card</div>
-          <div id="tab-decrypt" class="tab disabled" data-tab="decrypt" role="tab" aria-selected="false"
-            aria-disabled="true">Decrypt</div>
+          <div id="tab-verify" class="tab active" data-tab="verify" role="tab" aria-selected="false"
+            aria-disabled="true">Verify</div>
           <div id="tab-crypt" class="tab disabled" data-tab="crypt" role="tab" aria-selected="false"
             aria-disabled="true">Crypt</div>
+          <div id="tab-decrypt" class="tab disabled" data-tab="decrypt" role="tab" aria-selected="false"
+            aria-disabled="true">Decrypt</div>
         </div>
 
         <section id="panel-id" class="grid" role="tabpanel" aria-labelledby="tab-id" style="margin-top:12px;">
@@ -100,6 +102,25 @@
           </div>
         </section>
 
+        <section id="panel-verify" class="grid" role="tabpanel" aria-labelledby="tab-verify" style="margin-top:12px;"
+          hidden>
+          <div>
+            <label>Upload/paste GXT message</label>
+            <div class="row">
+              <input type="file" id="tokenFile" accept=".gx*" />
+              <button class="btn secondary" id="clearToken">Clear</button>
+            </div>
+            <textarea id="tokenInput" placeholder="Paste GXT message (gx*:...)"></textarea>
+          </div>
+          <div class="row">
+            <button class="btn" id="btnVerify">Verify</button>
+          </div>
+          <div>
+            <label>Output</label>
+            <textarea id="verifyBox" placeholder="Verified content appears here..." readonly></textarea>
+          </div>
+        </section>
+
         <section id="panel-decrypt" class="grid" role="tabpanel" aria-labelledby="tab-decrypt" style="margin-top:12px;"
           hidden>
           <div>
@@ -114,7 +135,7 @@
             <button class="btn" id="btnDecrypt">Decrypt</button>
           </div>
           <div>
-            <label>Chat box</label>
+            <label>Output</label>
             <textarea id="chatBox" placeholder="Verified/decrypted content appears here..." readonly></textarea>
           </div>
         </section>

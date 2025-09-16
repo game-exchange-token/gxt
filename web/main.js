@@ -8,7 +8,7 @@ import init, {
 
 const kinds = ["k", "i", "m"];
 const $ = (s) => document.querySelector(s);
-const stripPrefix = (key) => (kinds.some((k) => { key?.startsWith(`gx:`) }) ? key.slice(4) : key);
+const stripPrefix = (key) => (kinds.some((k) => { key?.startsWith(`gx${k}:`) }) ? key.slice(4) : key);
 const maskKey = (key) => {
   if (!key || typeof key !== "string") return "–";
   const k = stripPrefix(key);
@@ -24,12 +24,14 @@ async function boot() {
   await init();
   bindTabs();
   bindIdPanel();
+  bindVerify();
   bindCrypt();
   bindDecrypt();
   renderIdList();
   refreshIdSelect();
   // Initial sichtbar: nur ID-Panel
   $("#panel-id").hidden = false;
+  $("#panel-verify").hidden = true;
   $("#panel-decrypt").hidden = true;
   $("#panel-crypt").hidden = true;
 }
@@ -43,6 +45,7 @@ function bindTabs() {
       t.classList.add("active");
       const tab = t.dataset.tab;
       $("#panel-id").hidden = tab !== "id";
+      $("#panel-verify").hidden = tab !== "verify";
       $("#panel-decrypt").hidden = tab !== "decrypt";
       $("#panel-crypt").hidden = tab !== "crypt";
     })
@@ -416,21 +419,6 @@ function bindCrypt() {
 
   $("#clearMsg").addEventListener("click", () => ($("#msgInput").value = ""));
 
-  $("#btnVerify").addEventListener("click", () => {
-    try {
-      const src = ($("#msgInput").value || "").trim();
-      if (!src) {
-        $("#outputCrypt").value = "Keine Nachricht.";
-        return;
-      }
-      const v = verify_message(src);
-      $("#outputCrypt").value = JSON.stringify(v, null, 2);
-    } catch (err) {
-      $("#outputCrypt").value =
-        "Error (Verify): " + (err?.message || String(err));
-    }
-  });
-
   $("#btnEncrypt").addEventListener("click", () => {
     try {
       ensureKey();
@@ -449,6 +437,34 @@ function bindCrypt() {
     } catch (err) {
       $("#outputCrypt").value =
         "Error (Encrypt): " + (err?.message || String(err));
+    }
+  });
+}
+
+function bindVerify() {
+  $("#tokenFile").addEventListener("change", async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const text = await readFileAsText(f);
+    $("#tokenInput").value = text;
+  });
+  $("#clearToken").addEventListener(
+    "click",
+    () => ($("#tokenInput").value = "")
+  );
+
+  $("#btnVerify").addEventListener("click", () => {
+    try {
+      const token = ($("#tokenInput").value || "").trim();
+      if (!token) {
+        $("#verifyBox").value = "Not a valid token";
+        return;
+      }
+      let env = verify_message(token);
+      env.payload = JSON.parse(env.payload);
+      $("#verifyBox").value = JSON.stringify(env, null, 2);
+    } catch (err) {
+      $("#verifyBox").value = "Error (Verify): " + (err?.message || String(err));
     }
   });
 }
