@@ -49,7 +49,7 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="cargo build -p gxt-api-extism --target wasm32-wasip1 --release&#xD;&#xA;copy ..\..\target\wasm32-wasip1\release\gxt_api_extism.wasm gxt.wasm" />
+    <Exec Command="cd ..\..\gxt-api-extism&#xD;&#xA;cargo build --target wasm32-wasip1 --release&#xD;&#xA;copy ..\target\wasm32-wasip1\release\gxt_api_extism.wasm ..\gxt-api-csharp\gxt-api-csharp\gxt.wasm" />
   </Target>
 
 </Project>

@@ -1,3 +1,6 @@
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
+
 [target.x86_64-pc-windows-msvc]
 # Increase default stack size to avoid running out of stack
 # space in debug builds. The size matches Linux's default.

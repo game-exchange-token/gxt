@@ -24,3 +24,8 @@ serde_json.workspace = true
 thiserror = "2"
 x25519-dalek = { version = "2", features = ["static_secrets"] }
 zstd = { version = "0.13.3", features = ["wasm"] }
+getrandom = { version = "0.2.16", features = ["js"], optional = true }
+
+[features]
+default = []
+wasm = ["dep:getrandom", "getrandom/js"]

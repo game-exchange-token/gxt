@@ -20,6 +20,7 @@ For details check out [`spec.md`](https://github.com/game-exchange-token/gxt/blo
   - [UI](#ui)
 - [C API](#c-api)
 - [Extism API](#extism-api)
+- [WASM API](#wasm-api)
 - [C# API](#c-api-1)
 - [Special Thanks](#special-thanks)
 
@@ -218,6 +219,16 @@ ls
 ## Extism API
 By exposing the API as an Extism plugin its possible to use the library in every language that is supported
 as a host language by Extism.
+
+To build the crate as an Extism plugin, make sure you build from within the `gxt-api-extism` directory.
+Otherwise it will try to use the JS backend for `getrandom`, which is defined as the default for wasm so that
+the crate can be included in rust web projects without having to set the backend themselves.
+
+## WASM API
+If you want to import the crate into your web/node.js project, you can build the `gxt-wasm` crate with `wasm-pack`
+for the target you need.
+
+Make sure you run wasm-pack from inside the `gxt-wasm` directory so that it picks up all the optimization options.
 
 ## C# API
 Ready to use C# DLL, which loads the library through Extism, so we don't have to deploy the native library.
