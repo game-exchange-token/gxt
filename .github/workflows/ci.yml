@@ -84,11 +84,11 @@ jobs:
 
           cd gxt-wasm
           wasm-pack build --target nodejs --release -d node_pkg
-          zip gxt-nodejs.zip node_pkg\*
+          zip gxt-nodejs.zip node_pkg/*
           mv gxt-nodejs.zip ..
 
           wasm-pack build --target web --release -d web_pkg
-          zip gxt-web.zip web_pkg\*
+          zip gxt-web.zip web_pkg/*
           mv gxt-web.zip ..
 
       - name: Upload release
