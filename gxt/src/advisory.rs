@@ -15,9 +15,46 @@ pub struct TradeOrder {
     pub note: Option<String>,
 }
 
+/// Represents the response to a trade order.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TradeResponse {
+    /// The result of evaluating the trade order.
+    pub result: TradeResult,
+    /// Optional note explaining the response.
+    pub note: Option<String>,
+}
+
+/// Possible outcomes when processing a trade order.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum TradeResult {
+    /// The trade order was canceled.
+    Cancellation {
+        /// The trade order that was canceled.
+        order: TradeOrder,
+    },
+    /// The trade order was fully fulfilled.
+    Fulfillment {
+        /// The trade requests that were executed.
+        trades: Vec<TradeRequest>,
+    },
+    /// The trade order was partially fulfilled.
+    ///
+    /// Should only be used when `all_or_nothing` was set to false in the
+    /// original trade order.
+    Partial {
+        /// The trade requests that were successfully fulfilled.
+        fulfilled: Vec<TradeRequest>,
+        /// The trade requests that could not be fulfilled.
+        unfulfilled: Vec<TradeRequest>,
+    },
+}
+
 /// Represents a single trade request, with the wanted and offered items.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TradeRequest {
+    /// A unique identifier of a trade request.
+    /// This makes it easier to match fulfillments to requests.
+    pub id: String,
     /// The wanted items.
     pub wanted: Vec<Item>,
     /// The items offered for fulfilling the trade.

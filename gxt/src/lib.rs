@@ -3,6 +3,23 @@
 //! Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games.
 //!
 //! For details check out [`spec.md`](https://github.com/hardliner66/gxt/blob/main/spec.md).
+//!
+//! **Note:**
+//! This is intended to be used as a base for mods to exchange data in a secure way.
+//! The protocol only handles the data exchange part. It is on the integrator to ensure
+//! that the the correct actions take place inside the game. For trades, it is recommended
+//! to remove the offered items from the inventory of the player when the trade is created
+//! in order to avoid people offering items and then giving them away before the trade is completed.
+//!
+//! Its also recommended to save the game state after a trade is created in order to avoid save scumming.
+//! You should also store the ID of a trade so that it can be verified that a message was in response to
+//! that ID. When responding to a message, make sure you set the parent field to the ID of the message you're
+//! responding to. Otherwise there is no way to verify the message chain.
+//!
+//! You might also want to store some lightweight meta data for the trade request. For instance the
+//! identifiers of the items that were taken away. This way they can be given back when the other player
+//! cancels a trade. The trade result defined in the advisory module contains data from the original request
+//! that can be used to give items back or to award the items from the fulfillment.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

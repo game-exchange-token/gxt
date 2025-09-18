@@ -26,6 +26,7 @@ x25519-dalek = { version = "2", features = ["static_secrets"] }
 zstd = { version = "0.13.3", features = ["wasm"] }
 getrandom = { version = "0.2.16", features = ["js"], optional = true }
 bitflags = { version = "2.9.4", features = ["serde"] }
+nanoid = "0.4.0"
 
 [features]
 default = []
