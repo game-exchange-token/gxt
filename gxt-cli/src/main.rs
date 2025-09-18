@@ -6,8 +6,6 @@ use std::{
 
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
-use gxt::advisory::Trade;
-use schemars::schema_for;
 
 #[cfg(feature = "ui")]
 mod ui;
@@ -107,13 +105,6 @@ enum Cmd {
         json: bool,
     },
 
-    /// Outputs a JSON schema for the pre-defined data of the advisory module
-    AdvisorySchema {
-        /// Where to store the schema
-        #[arg(short, long)]
-        out: Option<PathBuf>,
-    },
-
     #[cfg(feature = "ui")]
     /// Show a simple UI for opening messages
     Ui {
@@ -184,12 +175,6 @@ fn main() -> Result<()> {
             } else {
                 println!("{envelope}");
             }
-        }
-
-        Cmd::AdvisorySchema { out } => {
-            let schema = schema_for!(Trade);
-            let output = serde_json::to_string_pretty(&schema)?;
-            write_out_string(&output, out.as_deref())?;
         }
 
         #[cfg(feature = "ui")]
