@@ -18,6 +18,7 @@ For details check out [`spec.md`](https://github.com/game-exchange-token/gxt/blo
   - [Msg](#msg)
   - [Decrypt](#decrypt)
   - [UI](#ui)
+- [Advisory Module](#advisory-module)
 - [C API](#c-api)
 - [Extism API](#extism-api)
 - [WASM API](#wasm-api)
@@ -202,6 +203,17 @@ Arguments:
 Options:
   -h, --help  Print help
 ```
+
+## Advisory Module
+The advisory module contains ready-to-use definitions for trading and items.
+These can be used to get going quickly without having to define your own.
+You just need to map the data of the game to the data in the advisory module and you're
+good to go. Many of the pre-defined enums have `Custom` values that can be used for minor
+extensions.
+
+If your data looks completely different than the what is defined in the advisory module,
+it's probably better to use your own data definitions instead of trying to force that
+data into the pre-defined shape.
 
 ## C API
 To use the C API, clone the repository and then build the crate `gxt-api-c`.

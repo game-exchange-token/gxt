@@ -2216,6 +2216,7 @@ dependencies = [
 name = "gxt"
 version = "3.0.2"
 dependencies = [
+ "bitflags 2.9.4",
  "blake3",
  "bs58",
  "chacha20poly1305",

@@ -2,7 +2,9 @@
     "markdown.extension.toc.levels": "2..6",
     "editor.formatOnSave": true,
     "cSpell.words": [
+        "Greatsword",
         "preimage",
-        "sigv"
+        "sigv",
+        "Spellbook"
     ]
 }
