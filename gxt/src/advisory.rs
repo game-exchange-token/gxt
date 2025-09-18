@@ -1,11 +1,25 @@
-use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "schemas")]
+use schemars::JsonSchema;
+
+/// A completed trade
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
+pub struct Trade {
+    /// the trade order
+    pub order: TradeOrder,
+
+    /// the response to the trade order
+    pub response: TradeResponse,
+}
 
 /// Type alias for generic data. This can be used for minor extensions of the data.
 pub type OpaqueData = serde_json::Value;
 
 /// Represents a trade order consisting of multiple trade requests.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub struct TradeOrder {
     /// The trade requests contained in this order.
     pub requests: Vec<TradeRequest>,
@@ -17,6 +31,7 @@ pub struct TradeOrder {
 
 /// Represents the response to a trade order.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub struct TradeResponse {
     /// The result of evaluating the trade order.
     pub result: TradeResult,
@@ -26,6 +41,7 @@ pub struct TradeResponse {
 
 /// Possible outcomes when processing a trade order.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum TradeResult {
     /// The trade order was canceled.
     Cancellation {
@@ -51,6 +67,7 @@ pub enum TradeResult {
 
 /// Represents a single trade request, with the wanted and offered items.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub struct TradeRequest {
     /// A unique identifier of a trade request.
     /// This makes it easier to match fulfillments to requests.
@@ -65,6 +82,7 @@ pub struct TradeRequest {
 
 /// A tradable item, such as gold, equipment or consumables.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub struct Item {
     /// Identifier for the item in the game.
     ///
@@ -84,6 +102,7 @@ pub struct Item {
 
 /// The type of an item.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum ItemKind {
     /// Consumable item with effects.
     Consumable {
@@ -113,27 +132,27 @@ pub enum ItemKind {
     ),
 }
 
-bitflags! {
 /// The target type for consumables.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
-pub struct TargetType: u8 {
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
+pub enum TargetType {
     /// Self use.
-    const User = 0b00000001;
+    User,
     /// Friendly target.
-    const Ally = 0b00000010;
+    Ally,
     /// Hostile target.
-    const Enemy = 0b00000100;
+    Enemy,
     /// Non-player character.
-    const Npc = 0b00001000;
+    Npc,
     /// All friendly targets.
-    const Friendly = Self::User.bits() | Self::Ally.bits();
+    Friendly,
     /// Any target.
-    const Any = Self::User.bits() | Self::Ally.bits() | Self::Enemy.bits() | Self::Npc.bits();
-}
+    Any,
 }
 
 /// Effects that can be caused by consumables or abilities.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum Effect {
     /// Heal health points.
     Heal {
@@ -191,6 +210,7 @@ pub enum Effect {
 
 /// Possible status effects that can affect characters.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum StatusEffect {
     /// Poison damage over time.
     Poison,
@@ -217,6 +237,7 @@ pub enum StatusEffect {
 
 /// Equipment slots for items.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum SlotType {
     /// Head slot.
     Head,
@@ -245,6 +266,7 @@ pub enum SlotType {
 
 /// Different weapon categories.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum WeaponKind {
     /// A simple blunt weapon.
     Club,
@@ -343,6 +365,7 @@ pub enum WeaponKind {
 
 /// Attribute modifier structure.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub struct AttributeModifier {
     /// The attribute being modified.
     pub attribute: Attribute,
@@ -356,6 +379,7 @@ pub struct AttributeModifier {
 
 /// Kind of modifier applied.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum ModifierKind {
     /// Flat modification.
     Flat,
@@ -365,6 +389,7 @@ pub enum ModifierKind {
 
 /// Attributes that can be modified by equipment or effects.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum Attribute {
     /// General attack power.
     Attack,
@@ -428,6 +453,7 @@ pub enum Attribute {
 
 /// Types of elemental damage or resistance.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum Element {
     /// Physical element.
     Physical,
@@ -454,6 +480,7 @@ pub enum Element {
 
 /// Types of valuables.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum ValuableKind {
     /// A gem.
     Gem,
@@ -476,6 +503,7 @@ pub enum ValuableKind {
 
 /// Rarity levels for items.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schemas", derive(JsonSchema))]
 pub enum Rarity {
     /// Common rarity.
     Common,

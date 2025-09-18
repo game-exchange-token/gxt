@@ -49,11 +49,16 @@ pub use serde_json::{from_value, json, to_value};
 /// If your data looks completely different than the what is defined in the advisory module,
 /// it's probably better to use your own data definitions instead of trying to force that
 /// data into the pre-defined shape.
+///
+/// **Important:**
+/// These data structures are not compatible with those defined for other languages,
+/// as those languages have different idiomatic was to define data structures.
+/// Normally, this should not be a problem because a mod is normally only written in one language,
+/// but if you have a use-case with more than one language, you need to keep this in mind.
 pub mod advisory;
 
 const PREFIX: &str = "gx";
 const SIGNATURE_DOMAIN: &[u8] = b"GXT";
-const MAX_RAW: usize = 64 * 1024;
 const VERSION: u8 = 3;
 
 type Bytes32 = [u8; 32];
@@ -81,9 +86,6 @@ pub enum GxtError {
     /// JSON serialization failed
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
-    /// The message is too large
-    #[error("too large")]
-    TooLarge,
     /// The signature is wrong
     #[error("invalid signature")]
     BadSig,
@@ -471,9 +473,6 @@ fn make(
     let (_, encryption_key) = derive_enc_from_signing(key);
     let canonical =
         get_canonical_representation(&verification_key, &encryption_key, payload.clone())?;
-    if canonical.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
 
     let id = blake3::hash(&canonical);
     let signature = key.sign(&preimage(&canonical));
@@ -518,9 +517,6 @@ fn encode_message(
         Some(id),
         Some(signature),
     )?;
-    if envelope_cbor.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
     let compressed_message = zstd::encode_all(&envelope_cbor[..], 3)?;
     Ok(format!(
         "{}{}",
@@ -538,9 +534,6 @@ fn get_kind(message: &str) -> Result<(PayloadKind, &str), GxtError> {
 fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
     let compressed_message = bs58::decode(message).into_vec()?;
     let raw = zstd::decode_all(&compressed_message[..])?;
-    if raw.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
     Ok(raw)
 }
 

@@ -59,10 +59,10 @@ There is a web UI for trying it out which can be found here: [GXT Playground](ht
 
 ## Install
 ```bash
-cargo install gxt-cli
+cargo install gxt-cli --locked
 
 # or if you want a simple (read-only) UI as well
-cargo install gxt-cli -F ui
+cargo install gxt-cli -F ui --locked
 ```
 
 ## Demo
