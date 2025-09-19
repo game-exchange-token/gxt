@@ -15,10 +15,10 @@
     <PackageProjectUrl></PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/game-exchange-token/gxt</RepositoryUrl>
-    <FileVersion>4.0.0</FileVersion>
-    <Version>4.0.0</Version>
+    <FileVersion>4.0.1</FileVersion>
+    <Version>4.0.1</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <AssemblyVersion>4.0.0</AssemblyVersion>
+    <AssemblyVersion>4.0.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
