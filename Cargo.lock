@@ -2240,6 +2240,7 @@ dependencies = [
  "rfd",
  "slint",
  "slint-build",
+ "stringlit",
  "windows-sys 0.61.0",
 ]
 
@@ -4854,6 +4855,12 @@ checksum = "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731"
 dependencies = [
  "float-cmp",
 ]
+
+[[package]]
+name = "stringlit"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e80de30f6a4915f4277c75980dea789ea6b895039ce61ad2a3b79a8787e7ada1"
 
 [[package]]
 name = "strsim"
