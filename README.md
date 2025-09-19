@@ -18,6 +18,7 @@ For details check out [`spec.md`](https://github.com/game-exchange-token/gxt/blo
   - [Msg](#msg)
   - [Decrypt](#decrypt)
   - [UI](#ui)
+- [Advisory Module](#advisory-module)
 - [C API](#c-api)
 - [Extism API](#extism-api)
 - [WASM API](#wasm-api)
@@ -58,10 +59,10 @@ There is a web UI for trying it out which can be found here: [GXT Playground](ht
 
 ## Install
 ```bash
-cargo install gxt-cli
+cargo install gxt-cli --locked
 
 # or if you want a simple (read-only) UI as well
-cargo install gxt-cli -F ui
+cargo install gxt-cli -F ui --locked
 ```
 
 ## Demo
@@ -202,6 +203,11 @@ Arguments:
 Options:
   -h, --help  Print help
 ```
+
+## Advisory Module
+The advisory module contains simple structures that can be used as a base for implementing trades.
+
+If you need need more features or different shapes of data, feel free to use your own instead.
 
 ## C API
 To use the C API, clone the repository and then build the crate `gxt-api-c`.

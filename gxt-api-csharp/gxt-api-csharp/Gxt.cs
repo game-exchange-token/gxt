@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 using Extism.Sdk;
 using Newtonsoft.Json;
 
-namespace gxt_csharp
+namespace Gxt
 {
     internal static class GxtWasm
     {
@@ -66,7 +66,7 @@ namespace gxt_csharp
         public string signature;
     }
 
-    public static class Gxt
+    public static class GxtSdk
     {
         public static string MakeKey()
         {

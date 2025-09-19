@@ -1,0 +1,1324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trade",
+  "description": "A completed trade",
+  "type": "object",
+  "properties": {
+    "order": {
+      "description": "the trade order",
+      "$ref": "#/$defs/TradeOrder"
+    },
+    "response": {
+      "description": "the response to the trade order",
+      "$ref": "#/$defs/TradeResponse"
+    }
+  },
+  "required": [
+    "order",
+    "response"
+  ],
+  "$defs": {
+    "TradeOrder": {
+      "description": "Represents a trade order consisting of multiple trade requests.",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "description": "The trade requests contained in this order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TradeRequest"
+          }
+        },
+        "all_or_nothing": {
+          "description": "Whether all requests must be fulfilled together.",
+          "type": "boolean"
+        },
+        "note": {
+          "description": "Optional note for the trade order.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "requests",
+        "all_or_nothing"
+      ]
+    },
+    "TradeRequest": {
+      "description": "Represents a single trade request, with the wanted and offered items.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "A unique identifier of a trade request.\nThis makes it easier to match fulfillments to requests.",
+          "type": "string"
+        },
+        "wanted": {
+          "description": "The wanted items.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Item"
+          }
+        },
+        "offered": {
+          "description": "The items offered for fulfilling the trade.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Item"
+          }
+        },
+        "note": {
+          "description": "Optional note for this trade request.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "wanted",
+        "offered"
+      ]
+    },
+    "Item": {
+      "description": "A tradable item, such as gold, equipment or consumables.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Identifier for the item in the game.\n\nThis is intended to map the item to an in-game item.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name of the item that should is shown to the player.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Optional description of the item.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "amount": {
+          "description": "Quantity of the item.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "kind": {
+          "description": "The type of item.",
+          "$ref": "#/$defs/ItemKind"
+        },
+        "note": {
+          "description": "Optional note for this item.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "amount",
+        "kind"
+      ]
+    },
+    "ItemKind": {
+      "description": "The type of an item.",
+      "oneOf": [
+        {
+          "description": "Consumable item with effects.",
+          "type": "object",
+          "properties": {
+            "Consumable": {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "description": "Who the consumable targets.",
+                  "$ref": "#/$defs/TargetType"
+                },
+                "effects": {
+                  "description": "Effects that occur when consumed.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Effect"
+                  }
+                }
+              },
+              "required": [
+                "target",
+                "effects"
+              ]
+            }
+          },
+          "required": [
+            "Consumable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Equipable item with attributes.",
+          "type": "object",
+          "properties": {
+            "Equipment": {
+              "type": "object",
+              "properties": {
+                "slot": {
+                  "description": "Slot type where this equipment is worn.",
+                  "$ref": "#/$defs/SlotType"
+                },
+                "attributes": {
+                  "description": "Attribute modifiers applied by this equipment.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/AttributeModifier"
+                  }
+                }
+              },
+              "required": [
+                "slot",
+                "attributes"
+              ]
+            }
+          },
+          "required": [
+            "Equipment"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Valuable item with rarity and classification.",
+          "type": "object",
+          "properties": {
+            "Valuable": {
+              "type": "object",
+              "properties": {
+                "rarity": {
+                  "description": "Rarity of the valuable item.",
+                  "$ref": "#/$defs/Rarity"
+                },
+                "kind": {
+                  "description": "Kind of valuable item.",
+                  "$ref": "#/$defs/ValuableKind"
+                }
+              },
+              "required": [
+                "rarity",
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "Valuable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Custom item data, used for item kinds not already covered here.",
+          "type": "object",
+          "properties": {
+            "Custom": {
+              "description": "Custom item data."
+            }
+          },
+          "required": [
+            "Custom"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TargetType": {
+      "description": "The target type for consumables.",
+      "oneOf": [
+        {
+          "description": "Self use.",
+          "type": "string",
+          "const": "User"
+        },
+        {
+          "description": "Friendly target.",
+          "type": "string",
+          "const": "Ally"
+        },
+        {
+          "description": "Hostile target.",
+          "type": "string",
+          "const": "Enemy"
+        },
+        {
+          "description": "Non-player character.",
+          "type": "string",
+          "const": "Npc"
+        },
+        {
+          "description": "All friendly targets.",
+          "type": "string",
+          "const": "Friendly"
+        },
+        {
+          "description": "Any target.",
+          "type": "string",
+          "const": "Any"
+        }
+      ]
+    },
+    "Effect": {
+      "description": "Effects that can be caused by consumables or abilities.",
+      "oneOf": [
+        {
+          "description": "Heal health points.",
+          "type": "object",
+          "properties": {
+            "Heal": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "Amount of health restored.",
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "required": [
+                "amount"
+              ]
+            }
+          },
+          "required": [
+            "Heal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Restore mana points.",
+          "type": "object",
+          "properties": {
+            "RestoreMana": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "Amount of mana restored.",
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "required": [
+                "amount"
+              ]
+            }
+          },
+          "required": [
+            "RestoreMana"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Restore stamina points.",
+          "type": "object",
+          "properties": {
+            "RestoreStamina": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "Amount of stamina restored.",
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "required": [
+                "amount"
+              ]
+            }
+          },
+          "required": [
+            "RestoreStamina"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Apply a positive modifier.",
+          "type": "object",
+          "properties": {
+            "Buff": {
+              "description": "Attribute modifier to apply.",
+              "$ref": "#/$defs/AttributeModifier"
+            }
+          },
+          "required": [
+            "Buff"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Apply a negative modifier.",
+          "type": "object",
+          "properties": {
+            "DeBuff": {
+              "description": "Attribute modifier to apply as a debuff.",
+              "$ref": "#/$defs/AttributeModifier"
+            }
+          },
+          "required": [
+            "DeBuff"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Deal damage of a certain element.",
+          "type": "object",
+          "properties": {
+            "Damage": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "Amount of damage dealt.",
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "kind": {
+                  "description": "Element of the damage.",
+                  "$ref": "#/$defs/Element"
+                }
+              },
+              "required": [
+                "amount",
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "Damage"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Cure a specific status effect.",
+          "type": "object",
+          "properties": {
+            "CureStatus": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "description": "Status effect to cure.",
+                  "$ref": "#/$defs/StatusEffect"
+                }
+              },
+              "required": [
+                "status"
+              ]
+            }
+          },
+          "required": [
+            "CureStatus"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Inflict a status effect.",
+          "type": "object",
+          "properties": {
+            "InflictStatus": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "description": "Status effect to inflict.",
+                  "$ref": "#/$defs/StatusEffect"
+                }
+              },
+              "required": [
+                "status"
+              ]
+            }
+          },
+          "required": [
+            "InflictStatus"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Teleport to a location.",
+          "type": "object",
+          "properties": {
+            "Teleport": {
+              "type": "object",
+              "properties": {
+                "location": {
+                  "description": "Identifier or name of the location.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "location"
+              ]
+            }
+          },
+          "required": [
+            "Teleport"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Custom effect.",
+          "type": "object",
+          "properties": {
+            "Custom": {
+              "description": "Custom effect data."
+            }
+          },
+          "required": [
+            "Custom"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AttributeModifier": {
+      "description": "Attribute modifier structure.",
+      "type": "object",
+      "properties": {
+        "attribute": {
+          "description": "The attribute being modified.",
+          "$ref": "#/$defs/Attribute"
+        },
+        "kind": {
+          "description": "How the modification is applied.",
+          "$ref": "#/$defs/ModifierKind"
+        },
+        "amount": {
+          "description": "Value of the modification.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "note": {
+          "description": "Optional note about the modifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "attribute",
+        "kind",
+        "amount"
+      ]
+    },
+    "Attribute": {
+      "description": "Attributes that can be modified by equipment or effects.",
+      "oneOf": [
+        {
+          "description": "General attack power.",
+          "type": "string",
+          "const": "Attack"
+        },
+        {
+          "description": "General defense power.",
+          "type": "string",
+          "const": "Defense"
+        },
+        {
+          "description": "Maximum health.",
+          "type": "string",
+          "const": "MaxHealth"
+        },
+        {
+          "description": "Maximum stamina.",
+          "type": "string",
+          "const": "MaxStamina"
+        },
+        {
+          "description": "Maximum mana.",
+          "type": "string",
+          "const": "MaxMana"
+        },
+        {
+          "description": "Health regeneration.",
+          "type": "string",
+          "const": "HealthRegeneration"
+        },
+        {
+          "description": "Stamina regeneration.",
+          "type": "string",
+          "const": "StaminaRegeneration"
+        },
+        {
+          "description": "Mana regeneration.",
+          "type": "string",
+          "const": "ManaRegeneration"
+        },
+        {
+          "description": "Critical hit chance.",
+          "type": "string",
+          "const": "CritChance"
+        },
+        {
+          "description": "Critical hit damage.",
+          "type": "string",
+          "const": "CritDamage"
+        },
+        {
+          "description": "Accuracy rating.",
+          "type": "string",
+          "const": "Accuracy"
+        },
+        {
+          "description": "Attack speed.",
+          "type": "string",
+          "const": "AttackSpeed"
+        },
+        {
+          "description": "Casting speed.",
+          "type": "string",
+          "const": "CastSpeed"
+        },
+        {
+          "description": "Attack or ability range.",
+          "type": "string",
+          "const": "Range"
+        },
+        {
+          "description": "Chance to evade.",
+          "type": "string",
+          "const": "Evasion"
+        },
+        {
+          "description": "Chance to block.",
+          "type": "string",
+          "const": "BlockChance"
+        },
+        {
+          "description": "Movement speed.",
+          "type": "string",
+          "const": "MoveSpeed"
+        },
+        {
+          "description": "Carrying capacity.",
+          "type": "string",
+          "const": "CarryCapacity"
+        },
+        {
+          "description": "Additional damage of a specific element.",
+          "type": "object",
+          "properties": {
+            "Damage": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "description": "Element of the damage.",
+                  "$ref": "#/$defs/Element"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "Damage"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Resistance to a specific element.",
+          "type": "object",
+          "properties": {
+            "Resistance": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "description": "Element resisted.",
+                  "$ref": "#/$defs/Element"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "Resistance"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Custom attribute.",
+          "type": "object",
+          "properties": {
+            "Custom": {
+              "description": "Custom attribute data."
+            }
+          },
+          "required": [
+            "Custom"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Element": {
+      "description": "Types of elemental damage or resistance.",
+      "oneOf": [
+        {
+          "description": "Physical element.",
+          "type": "string",
+          "const": "Physical"
+        },
+        {
+          "description": "Fire element.",
+          "type": "string",
+          "const": "Fire"
+        },
+        {
+          "description": "Cold element.",
+          "type": "string",
+          "const": "Cold"
+        },
+        {
+          "description": "Lightning element.",
+          "type": "string",
+          "const": "Lightning"
+        },
+        {
+          "description": "Poison element.",
+          "type": "string",
+          "const": "Poison"
+        },
+        {
+          "description": "Arcane element.",
+          "type": "string",
+          "const": "Arcane"
+        },
+        {
+          "description": "Holy element.",
+          "type": "string",
+          "const": "Holy"
+        },
+        {
+          "description": "Shadow element.",
+          "type": "string",
+          "const": "Shadow"
+        },
+        {
+          "description": "Custom element.",
+          "type": "object",
+          "properties": {
+            "Custom": {
+              "description": "Custom element description.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "Custom"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ModifierKind": {
+      "description": "Kind of modifier applied.",
+      "oneOf": [
+        {
+          "description": "Flat modification.",
+          "type": "string",
+          "const": "Flat"
+        },
+        {
+          "description": "Percentage-based modification.",
+          "type": "string",
+          "const": "Percent"
+        }
+      ]
+    },
+    "StatusEffect": {
+      "description": "Possible status effects that can affect characters.",
+      "oneOf": [
+        {
+          "description": "Poison damage over time.",
+          "type": "string",
+          "const": "Poison"
+        },
+        {
+          "description": "Burn damage over time.",
+          "type": "string",
+          "const": "Burn"
+        },
+        {
+          "description": "Frozen state.",
+          "type": "string",
+          "const": "Freeze"
+        },
+        {
+          "description": "Stunned state.",
+          "type": "string",
+          "const": "Stun"
+        },
+        {
+          "description": "Blinded, reducing accuracy.",
+          "type": "string",
+          "const": "Blind"
+        },
+        {
+          "description": "Silenced, disabling abilities.",
+          "type": "string",
+          "const": "Silence"
+        },
+        {
+          "description": "Slowed movement or actions.",
+          "type": "string",
+          "const": "Slow"
+        },
+        {
+          "description": "General weakness.",
+          "type": "string",
+          "const": "Weakness"
+        },
+        {
+          "description": "Custom status effect.",
+          "type": "object",
+          "properties": {
+            "Custom": {
+              "description": "Custom status effect description.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "Custom"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "SlotType": {
+      "description": "Equipment slots for items.",
+      "oneOf": [
+        {
+          "description": "Head slot.",
+          "type": "string",
+          "const": "Head"
+        },
+        {
+          "description": "Body slot.",
+          "type": "string",
+          "const": "Body"
+        },
+        {
+          "description": "Arm slot.",
+          "type": "string",
+          "const": "Arm"
+        },
+        {
+          "description": "Hand slot.",
+          "type": "string",
+          "const": "Hand"
+        },
+        {
+          "description": "Leg slot.",
+          "type": "string",
+          "const": "Leg"
+        },
+        {
+          "description": "Foot slot.",
+          "type": "string",
+          "const": "Foot"
+        },
+        {
+          "description": "Neck slot.",
+          "type": "string",
+          "const": "Neck"
+        },
+        {
+          "description": "Finger slot.",
+          "type": "string",
+          "const": "Finger"
+        },
+        {
+          "description": "Shield slot.",
+          "type": "string",
+          "const": "Shield"
+        },
+        {
+          "description": "Weapon slot with a specific kind.",
+          "type": "object",
+          "properties": {
+            "Weapon": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "description": "Type of weapon equipped in this slot.",
+                  "$ref": "#/$defs/WeaponKind"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "Weapon"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "WeaponKind": {
+      "description": "Different weapon categories.",
+      "oneOf": [
+        {
+          "description": "A simple blunt weapon.",
+          "type": "string",
+          "const": "Club"
+        },
+        {
+          "description": "A spiked blunt weapon.",
+          "type": "string",
+          "const": "Mace"
+        },
+        {
+          "description": "A heavy striking weapon.",
+          "type": "string",
+          "const": "Hammer"
+        },
+        {
+          "description": "A chained blunt weapon.",
+          "type": "string",
+          "const": "Flail"
+        },
+        {
+          "description": "A long staff or rod.",
+          "type": "string",
+          "const": "Staff"
+        },
+        {
+          "description": "A small bladed weapon.",
+          "type": "string",
+          "const": "Dagger"
+        },
+        {
+          "description": "A standard bladed weapon.",
+          "type": "string",
+          "const": "Sword"
+        },
+        {
+          "description": "A large two-handed sword.",
+          "type": "string",
+          "const": "Greatsword"
+        },
+        {
+          "description": "A one-handed axe.",
+          "type": "string",
+          "const": "Axe"
+        },
+        {
+          "description": "A larger battle axe.",
+          "type": "string",
+          "const": "BattleAxe"
+        },
+        {
+          "description": "A massive two-handed axe.",
+          "type": "string",
+          "const": "GreatAxe"
+        },
+        {
+          "description": "A thrusting spear.",
+          "type": "string",
+          "const": "Spear"
+        },
+        {
+          "description": "A polearm with an axe head.",
+          "type": "string",
+          "const": "Halberd"
+        },
+        {
+          "description": "A curved farming blade repurposed as weapon.",
+          "type": "string",
+          "const": "Scythe"
+        },
+        {
+          "description": "A burning torch.",
+          "type": "string",
+          "const": "Torch"
+        },
+        {
+          "description": "A mining pickaxe used as weapon.",
+          "type": "string",
+          "const": "Pickaxe"
+        },
+        {
+          "description": "A shovel as an improvised weapon.",
+          "type": "string",
+          "const": "Shovel"
+        },
+        {
+          "description": "A farming sickle.",
+          "type": "string",
+          "const": "Sickle"
+        },
+        {
+          "description": "A butcher's cleaver.",
+          "type": "string",
+          "const": "Cleaver"
+        },
+        {
+          "description": "A throwing knife.",
+          "type": "string",
+          "const": "ThrowingKnife"
+        },
+        {
+          "description": "A light throwing spear.",
+          "type": "string",
+          "const": "Javelin"
+        },
+        {
+          "description": "A throwing axe.",
+          "type": "string",
+          "const": "ThrowingAxe"
+        },
+        {
+          "description": "A curved returning weapon.",
+          "type": "string",
+          "const": "Boomerang"
+        },
+        {
+          "description": "A sling for stones.",
+          "type": "string",
+          "const": "Sling"
+        },
+        {
+          "description": "A simple bow.",
+          "type": "string",
+          "const": "Bow"
+        },
+        {
+          "description": "A longbow for distance.",
+          "type": "string",
+          "const": "Longbow"
+        },
+        {
+          "description": "A composite bow with stronger pull.",
+          "type": "string",
+          "const": "CompositeBow"
+        },
+        {
+          "description": "A crossbow.",
+          "type": "string",
+          "const": "Crossbow"
+        },
+        {
+          "description": "A heavy crossbow.",
+          "type": "string",
+          "const": "HeavyCrossbow"
+        },
+        {
+          "description": "A repeating crossbow.",
+          "type": "string",
+          "const": "RepeatingCrossbow"
+        },
+        {
+          "description": "A blowgun.",
+          "type": "string",
+          "const": "Blowgun"
+        },
+        {
+          "description": "A flintlock pistol.",
+          "type": "string",
+          "const": "FlintlockPistol"
+        },
+        {
+          "description": "A musket.",
+          "type": "string",
+          "const": "Musket"
+        },
+        {
+          "description": "A rifle.",
+          "type": "string",
+          "const": "Rifle"
+        },
+        {
+          "description": "A revolver.",
+          "type": "string",
+          "const": "Revolver"
+        },
+        {
+          "description": "A shotgun.",
+          "type": "string",
+          "const": "Shotgun"
+        },
+        {
+          "description": "A cannon.",
+          "type": "string",
+          "const": "Cannon"
+        },
+        {
+          "description": "A magical wand.",
+          "type": "string",
+          "const": "Wand"
+        },
+        {
+          "description": "A magical staff.",
+          "type": "string",
+          "const": "MagicStaff"
+        },
+        {
+          "description": "A magical orb.",
+          "type": "string",
+          "const": "Orb"
+        },
+        {
+          "description": "A spellbook.",
+          "type": "string",
+          "const": "Spellbook"
+        },
+        {
+          "description": "A whip.",
+          "type": "string",
+          "const": "Whip"
+        },
+        {
+          "description": "A flail with a chain.",
+          "type": "string",
+          "const": "ChainFlail"
+        },
+        {
+          "description": "Claw weapons.",
+          "type": "string",
+          "const": "Claw"
+        },
+        {
+          "description": "Custom weapon.",
+          "type": "object",
+          "properties": {
+            "Custom": {
+              "description": "Custom weapon type.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "Custom"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Rarity": {
+      "description": "Rarity levels for items.",
+      "oneOf": [
+        {
+          "description": "Common rarity.",
+          "type": "string",
+          "const": "Common"
+        },
+        {
+          "description": "Uncommon rarity.",
+          "type": "string",
+          "const": "Uncommon"
+        },
+        {
+          "description": "Rare rarity.",
+          "type": "string",
+          "const": "Rare"
+        },
+        {
+          "description": "Epic rarity.",
+          "type": "string",
+          "const": "Epic"
+        },
+        {
+          "description": "Legendary rarity.",
+          "type": "string",
+          "const": "Legendary"
+        },
+        {
+          "description": "Mythic rarity.",
+          "type": "string",
+          "const": "Mythic"
+        },
+        {
+          "description": "Custom named rarity.",
+          "type": "object",
+          "properties": {
+            "CustomNamed": {
+              "description": "Custom rarity name.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "CustomNamed"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "Custom rarity as numeric value.",
+          "type": "object",
+          "properties": {
+            "CustomValue": {
+              "description": "Custom numeric rarity value.",
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "required": [
+            "CustomValue"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ValuableKind": {
+      "description": "Types of valuables.",
+      "oneOf": [
+        {
+          "description": "A gem.",
+          "type": "string",
+          "const": "Gem"
+        },
+        {
+          "description": "A jewel.",
+          "type": "string",
+          "const": "Jewel"
+        },
+        {
+          "description": "Precious metal.",
+          "type": "string",
+          "const": "PreciousMetal"
+        },
+        {
+          "description": "Artifact.",
+          "type": "string",
+          "const": "Artifact"
+        },
+        {
+          "description": "Relic.",
+          "type": "string",
+          "const": "Relic"
+        },
+        {
+          "description": "Currency.",
+          "type": "string",
+          "const": "Currency"
+        },
+        {
+          "description": "Custom valuable kind.",
+          "type": "object",
+          "properties": {
+            "Custom": {
+              "description": "Custom valuable kind description.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "Custom"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TradeResponse": {
+      "description": "Represents the response to a trade order.",
+      "type": "object",
+      "properties": {
+        "result": {
+          "description": "The result of evaluating the trade order.",
+          "$ref": "#/$defs/TradeResult"
+        },
+        "note": {
+          "description": "Optional note explaining the response.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "result"
+      ]
+    },
+    "TradeResult": {
+      "description": "Possible outcomes when processing a trade order.",
+      "oneOf": [
+        {
+          "description": "The trade order was canceled.",
+          "type": "object",
+          "properties": {
+            "Cancellation": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "description": "The trade order that was canceled.",
+                  "$ref": "#/$defs/TradeOrder"
+                }
+              },
+              "required": [
+                "order"
+              ]
+            }
+          },
+          "required": [
+            "Cancellation"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "The trade order was fully fulfilled.",
+          "type": "object",
+          "properties": {
+            "Fulfillment": {
+              "type": "object",
+              "properties": {
+                "trades": {
+                  "description": "The trade requests that were executed.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/TradeRequest"
+                  }
+                }
+              },
+              "required": [
+                "trades"
+              ]
+            }
+          },
+          "required": [
+            "Fulfillment"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "description": "The trade order was partially fulfilled.\n\nShould only be used when `all_or_nothing` was set to false in the\noriginal trade order.",
+          "type": "object",
+          "properties": {
+            "Partial": {
+              "type": "object",
+              "properties": {
+                "fulfilled": {
+                  "description": "The trade requests that were successfully fulfilled.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/TradeRequest"
+                  }
+                },
+                "unfulfilled": {
+                  "description": "The trade requests that could not be fulfilled.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/TradeRequest"
+                  }
+                }
+              },
+              "required": [
+                "fulfilled",
+                "unfulfilled"
+              ]
+            }
+          },
+          "required": [
+            "Partial"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

@@ -3,6 +3,23 @@
 //! Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games.
 //!
 //! For details check out [`spec.md`](https://github.com/hardliner66/gxt/blob/main/spec.md).
+//!
+//! **Note:**
+//! This is intended to be used as a base for mods to exchange data in a secure way.
+//! The protocol only handles the data exchange part. It is on the integrator to ensure
+//! that the the correct actions take place inside the game. For trades, it is recommended
+//! to remove the offered items from the inventory of the player when the trade is created
+//! in order to avoid people offering items and then giving them away before the trade is completed.
+//!
+//! Its also recommended to save the game state after a trade is created in order to avoid save scumming.
+//! You should also store the ID of a trade so that it can be verified that a message was in response to
+//! that ID. When responding to a message, make sure you set the parent field to the ID of the message you're
+//! responding to. Otherwise there is no way to verify the message chain.
+//!
+//! You might also want to store some lightweight meta data for the trade request. For instance the
+//! identifiers of the items that were taken away. This way they can be given back when the other player
+//! cancels a trade. The trade result defined in the advisory module contains data from the original request
+//! that can be used to give items back or to award the items from the fulfillment.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -17,15 +34,50 @@ use rand::RngCore;
 use rand::rngs::OsRng;
 use serde::Deserialize;
 use serde::{Serialize, de::DeserializeOwned};
-use serde_cbor::Value;
+use serde_cbor::Value as CborValue;
 use thiserror::Error;
 use x25519_dalek::{PublicKey as XPublicKey, StaticSecret as XSecret};
 
-pub use serde_json::{from_value, json, to_value};
+pub use serde_json::{Value as JsonValue, from_value, json, to_value};
+
+/// Helper function to deserialize strings into json values
+pub fn value_from_str(s: &str) -> Result<JsonValue, serde_json::Error> {
+    serde_json::from_str(s)
+}
+
+/// Helper function to serialize json values into strings
+pub fn value_to_string(value: &JsonValue) -> Result<String, serde_json::Error> {
+    serde_json::to_string(value)
+}
+
+/// Helper function to serialize arbitrary values, that implement the `Serialize` trait, into strings
+pub fn to_json<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
+    serde_json::to_string(value)
+}
+
+/// Helper function to serialize arbitrary values, that implement the `Serialize` trait, into strings
+/// and format it nicely
+pub fn to_json_pretty<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
+    serde_json::to_string_pretty(value)
+}
+
+/// Helper function to deserialize a string into an arbitrary value, that implement the `Serialize` trait
+pub fn from_json<T: DeserializeOwned>(s: &str) -> Result<T, serde_json::Error> {
+    serde_json::from_str(s)
+}
+
+/// The advisory module contains simple structures that can be used as a base for implementing trades.
+///
+/// If you need need more features or different shapes of data, feel free to use your own instead.
+///
+/// **Important:**
+/// These data structures might not be compatible with those defined for other languages.
+/// Normally, this should not be a problem because a mod is normally only written in one language,
+/// but if you have a use-case with more than one language, you need to keep this in mind.
+pub mod advisory;
 
 const PREFIX: &str = "gx";
 const SIGNATURE_DOMAIN: &[u8] = b"GXT";
-const MAX_RAW: usize = 64 * 1024;
 const VERSION: u8 = 3;
 
 type Bytes32 = [u8; 32];
@@ -53,9 +105,6 @@ pub enum GxtError {
     /// JSON serialization failed
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
-    /// The message is too large
-    #[error("too large")]
-    TooLarge,
     /// The signature is wrong
     #[error("invalid signature")]
     BadSig,
@@ -224,25 +273,25 @@ pub fn make_id_card<M: Serialize + DeserializeOwned>(
 pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Envelope<P>, GxtError> {
     let (kind, msg) = get_kind(msg)?;
     let raw = decode_message(msg)?;
-    let envelope_cbor: Value = serde_cbor::from_slice(&raw)?;
+    let envelope_cbor: CborValue = serde_cbor::from_slice(&raw)?;
 
     let arr = match envelope_cbor {
-        Value::Array(a) if a.len() == 7 => a,
+        CborValue::Array(a) if a.len() == 7 => a,
         _ => return Err(GxtError::Invalid),
     };
 
     let mut values = arr.into_iter();
 
     let version = match values.next() {
-        Some(Value::Integer(i)) if i == VERSION.into() => VERSION,
+        Some(CborValue::Integer(i)) if i == VERSION.into() => VERSION,
         _ => return Err(GxtError::Invalid),
     };
     let verification_key_bytes = match values.next() {
-        Some(Value::Text(t)) => parse_hex::<32>(&t)?,
+        Some(CborValue::Text(t)) => parse_hex::<32>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
     let encryption_key = match values.next() {
-        Some(Value::Text(t)) => parse_hex::<32>(&t)?,
+        Some(CborValue::Text(t)) => parse_hex::<32>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
     let payload = match values.next() {
@@ -250,16 +299,16 @@ pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Enve
         _ => return Err(GxtError::Invalid),
     };
     let parent = match values.next() {
-        Some(Value::Text(t)) if !t.is_empty() => Some(parse_hex::<32>(&t)?),
-        Some(Value::Text(_)) => None,
+        Some(CborValue::Text(t)) if !t.is_empty() => Some(parse_hex::<32>(&t)?),
+        Some(CborValue::Text(_)) => None,
         _ => return Err(GxtError::Invalid),
     };
     let id = match values.next() {
-        Some(Value::Text(t)) => parse_hex::<32>(&t)?,
+        Some(CborValue::Text(t)) => parse_hex::<32>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
     let signature_bytes = match values.next() {
-        Some(Value::Text(t)) => parse_hex::<64>(&t)?,
+        Some(CborValue::Text(t)) => parse_hex::<64>(&t)?,
         _ => return Err(GxtError::Invalid),
     };
 
@@ -300,7 +349,7 @@ pub fn encrypt_message<P: Serialize + DeserializeOwned>(
     payload: &P,
     parent: Option<String>,
 ) -> Result<String, GxtError> {
-    let id_card = verify_message::<Value>(id_card.trim())?;
+    let id_card = verify_message::<CborValue>(id_card.trim())?;
     let their_encryption_key = parse_hex::<32>(&id_card.encryption_key)?;
     let key = parse_key(key.trim())?;
     let (my_secret_key, _my_encryption_key) = derive_enc_from_signing(&key);
@@ -316,24 +365,27 @@ pub fn encrypt_message<P: Serialize + DeserializeOwned>(
 
     let mut message = std::collections::BTreeMap::new();
     message.insert(
-        Value::Text("to".into()),
-        Value::Text(hex::encode(their_encryption_key)),
+        CborValue::Text("to".into()),
+        CborValue::Text(hex::encode(their_encryption_key)),
     );
     let mut encrypted_message = std::collections::BTreeMap::new();
     encrypted_message.insert(
-        Value::Text("alg".into()),
-        Value::Text("xchacha20poly1305".into()),
+        CborValue::Text("alg".into()),
+        CborValue::Text("xchacha20poly1305".into()),
     );
     encrypted_message.insert(
-        Value::Text("n24".into()),
-        Value::Text(hex::encode(nonce_bytes)),
+        CborValue::Text("n24".into()),
+        CborValue::Text(hex::encode(nonce_bytes)),
     );
     encrypted_message.insert(
-        Value::Text("ct".into()),
-        Value::Text(hex::encode(&cipher_text)),
+        CborValue::Text("ct".into()),
+        CborValue::Text(hex::encode(&cipher_text)),
     );
-    message.insert(Value::Text("enc".into()), Value::Map(encrypted_message));
-    let payload = Value::Map(message);
+    message.insert(
+        CborValue::Text("enc".into()),
+        CborValue::Map(encrypted_message),
+    );
+    let payload = CborValue::Map(message);
     make(
         &key,
         PayloadKind::Msg,
@@ -350,25 +402,25 @@ pub fn decrypt_message<P: Serialize + DeserializeOwned>(
     message: &str,
     key: &str,
 ) -> Result<Envelope<P>, GxtError> {
-    let mut envelope = verify_message::<Value>(message.trim())?;
+    let mut envelope = verify_message::<CborValue>(message.trim())?;
 
     let key = parse_key(key)?;
-    let Value::Map(map) = &envelope.payload else {
+    let CborValue::Map(map) = &envelope.payload else {
         return Err(GxtError::Invalid);
     };
-    let to = match map.get(&Value::Text("to".into())) {
-        Some(Value::Text(t)) => parse_hex::<32>(t)?,
+    let to = match map.get(&CborValue::Text("to".into())) {
+        Some(CborValue::Text(t)) => parse_hex::<32>(t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let Some(Value::Map(encm)) = map.get(&Value::Text("enc".into())) else {
+    let Some(CborValue::Map(encm)) = map.get(&CborValue::Text("enc".into())) else {
         return Err(GxtError::Invalid);
     };
-    let nonce = match encm.get(&Value::Text("n24".into())) {
-        Some(Value::Text(t)) => parse_hex::<24>(t)?,
+    let nonce = match encm.get(&CborValue::Text("n24".into())) {
+        Some(CborValue::Text(t)) => parse_hex::<24>(t)?,
         _ => return Err(GxtError::Invalid),
     };
-    let cipher_text = match encm.get(&Value::Text("ct".into())) {
-        Some(Value::Text(t)) => hex::decode(t)?,
+    let cipher_text = match encm.get(&CborValue::Text("ct".into())) {
+        Some(CborValue::Text(t)) => hex::decode(t)?,
         _ => return Err(GxtError::Invalid),
     };
 
@@ -401,19 +453,19 @@ pub fn decrypt_message<P: Serialize + DeserializeOwned>(
 fn cbor_array(
     verification_key: &Bytes32,
     encryption_key: &Bytes32,
-    payload: Value,
+    payload: CborValue,
     parent: Option<Bytes32>,
     id: Option<&Bytes32>,
     signature: Option<&Bytes64>,
 ) -> Result<Vec<u8>, GxtError> {
-    let envelope_values = Value::Array(vec![
-        Value::Integer(VERSION.into()),
-        Value::Text(hex::encode(verification_key)),
-        Value::Text(hex::encode(encryption_key)),
+    let envelope_values = CborValue::Array(vec![
+        CborValue::Integer(VERSION.into()),
+        CborValue::Text(hex::encode(verification_key)),
+        CborValue::Text(hex::encode(encryption_key)),
         payload,
-        Value::Text(parent.map(hex::encode).unwrap_or_default()),
-        Value::Text(id.map(hex::encode).unwrap_or_default()),
-        Value::Text(signature.map(hex::encode).unwrap_or_default()),
+        CborValue::Text(parent.map(hex::encode).unwrap_or_default()),
+        CborValue::Text(id.map(hex::encode).unwrap_or_default()),
+        CborValue::Text(signature.map(hex::encode).unwrap_or_default()),
     ]);
     Ok(serde_cbor::to_vec(&envelope_values)?)
 }
@@ -421,7 +473,7 @@ fn cbor_array(
 fn get_canonical_representation(
     verification_key: &Bytes32,
     encryption_key: &Bytes32,
-    payload: Value,
+    payload: CborValue,
 ) -> Result<Vec<u8>, GxtError> {
     cbor_array(verification_key, encryption_key, payload, None, None, None)
 }
@@ -436,16 +488,13 @@ fn preimage(canonical: &[u8]) -> Vec<u8> {
 fn make(
     key: &SigningKey,
     kind: PayloadKind,
-    payload: Value,
+    payload: CborValue,
     parent: Option<Bytes32>,
 ) -> Result<String, GxtError> {
     let verification_key = key.verifying_key().to_bytes();
     let (_, encryption_key) = derive_enc_from_signing(key);
     let canonical =
         get_canonical_representation(&verification_key, &encryption_key, payload.clone())?;
-    if canonical.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
 
     let id = blake3::hash(&canonical);
     let signature = key.sign(&preimage(&canonical));
@@ -477,7 +526,7 @@ fn encode_message(
     verification_key: &Bytes32,
     encryption_key: &Bytes32,
     kind: PayloadKind,
-    payload: Value,
+    payload: CborValue,
     parent: Option<Bytes32>,
     id: &Bytes32,
     signature: &Bytes64,
@@ -490,9 +539,6 @@ fn encode_message(
         Some(id),
         Some(signature),
     )?;
-    if envelope_cbor.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
     let compressed_message = zstd::encode_all(&envelope_cbor[..], 3)?;
     Ok(format!(
         "{}{}",
@@ -510,9 +556,6 @@ fn get_kind(message: &str) -> Result<(PayloadKind, &str), GxtError> {
 fn decode_message(message: &str) -> Result<Vec<u8>, GxtError> {
     let compressed_message = bs58::decode(message).into_vec()?;
     let raw = zstd::decode_all(&compressed_message[..])?;
-    if raw.len() > MAX_RAW {
-        return Err(GxtError::TooLarge);
-    }
     Ok(raw)
 }
 
@@ -531,7 +574,7 @@ fn parse_hex<const SIZE: usize>(hex_string: &str) -> Result<[u8; SIZE], GxtError
 
 fn parse_key(key: &str) -> Result<SigningKey, GxtError> {
     if key.starts_with(PREFIX) {
-        let token = verify_message::<serde_json::Value>(key.trim())?;
+        let token = verify_message::<JsonValue>(key.trim())?;
         Ok(from_value(token.payload)?)
     } else {
         Ok(SigningKey::from_bytes(&parse_hex::<32>(key)?))
