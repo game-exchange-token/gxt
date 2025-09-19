@@ -16,7 +16,7 @@ edition = "2024"
 description = "Minimal, encrypted, signed and copy-pasteable tokens for manual data exchange between games"
 authors = ["hardliner66"]
 license = "MIT OR Apache-2.0"
-version = "4.0.0"
+version = "4.0.1"
 repository = "https://github.com/game-exchange-token/gxt"
 documentation = "https://docs.rs/gxt/latest/gxt/"
 
