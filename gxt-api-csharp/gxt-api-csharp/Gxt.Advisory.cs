@@ -6,6 +6,23 @@ namespace Gxt.Advisory
     using Newtonsoft.Json.Converters;
     using System.Collections.Generic;
 
+    /// <summary>
+    /// Simple meta data for an ID card.
+    /// </summary>
+    public class IdCard
+    {
+        /// <summary>
+        /// The name the player wants to be displayed as.
+        /// </summary>
+        required public string DisplayName { get; set; }
+
+        /// <summary>
+        /// Optional opaque data specific to the game.
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public System.Text.Json.Nodes.JsonNode? Data { get; set; }
+    }
+
 
     /// <summary>
     /// Represents a trade order consisting of multiple trade requests.
@@ -25,6 +42,7 @@ namespace Gxt.Advisory
         /// <summary>
         /// Optional note for the trade order.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? Note { get; set; }
     }
 
@@ -46,6 +64,7 @@ namespace Gxt.Advisory
         /// <summary>
         /// Optional note explaining the response.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? Note { get; set; }
     }
 
@@ -73,6 +92,7 @@ namespace Gxt.Advisory
         /// <summary>
         /// Optional opaque data specific to the game.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public System.Text.Json.Nodes.JsonNode? Data { get; set; }
     }
 
@@ -89,11 +109,13 @@ namespace Gxt.Advisory
         /// <summary>
         /// The name of the item that should be shown to the player.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? DisplayName { get; set; }
 
         /// <summary>
         /// Description of the item.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? Description { get; set; }
 
         /// <summary>
@@ -109,6 +131,7 @@ namespace Gxt.Advisory
         /// <summary>
         /// Optional opaque data specific to the game.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public System.Text.Json.Nodes.JsonNode? Data { get; set; }
     }
 
@@ -125,6 +148,7 @@ namespace Gxt.Advisory
         /// <summary>
         /// The name of the attribute that should be shown to the player.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
        public string? DisplayName { get; set; }
 
         /// <summary>
@@ -140,6 +164,7 @@ namespace Gxt.Advisory
         /// <summary>
         /// Optional opaque data specific to the game.
         /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public System.Text.Json.Nodes.JsonNode? Data { get; set; }
     }
 

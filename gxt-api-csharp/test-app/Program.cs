@@ -1,16 +1,16 @@
 ﻿using Gxt;
 using Gxt.Advisory;
+using Newtonsoft.Json;
 
 var alice = GxtSdk.MakeKey();
 var bob = GxtSdk.MakeKey();
 
-Meta meta;
-meta.name = "Bob";
+var idCard = new IdCard { DisplayName = "Bob" };
 
-var bobsIdCard = GxtSdk.MakeIdCard(bob, meta);
-var vEnvelope1 = GxtSdk.VerifyMessage<Meta>(bobsIdCard);
+var bobsIdCard = GxtSdk.MakeIdCard(bob, idCard);
+var vEnvelope1 = GxtSdk.VerifyMessage<IdCard>(bobsIdCard);
 Console.WriteLine("Bobs ID Card:");
-Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(vEnvelope1, Newtonsoft.Json.Formatting.Indented));
+Console.WriteLine(JsonConvert.SerializeObject(vEnvelope1, Formatting.Indented));
 Console.WriteLine();
 
 var requests = new List<TradeRequest>
@@ -57,15 +57,5 @@ Console.WriteLine();
 
 var envelope = GxtSdk.DecryptMessage<TradeOrder>(encryptedMessage, bob);
 Console.WriteLine("Decrypted Message for Bob:");
-Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(envelope, Newtonsoft.Json.Formatting.Indented)); ;
+Console.WriteLine(JsonConvert.SerializeObject(envelope, Formatting.Indented)); ;
 Console.WriteLine();
-
-struct Meta
-{
-    public string name;
-}
-
-struct Payload
-{
-    public string hello;
-}
