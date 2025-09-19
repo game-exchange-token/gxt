@@ -21,15 +21,15 @@ var requests = new List<TradeRequest>
         Wanted = [
             new()
             {
-                Id = "sword",
+                Id = "weapons.swords.fire_sword",
                 Amount = 1,
-                Description = "Firey fire sword of fire damage",
+                Description = "Fiery fire sword of fire damage",
                 DisplayName = "Fire Sword",
                 Attributes = new List<AttributeModifier>()
                 {
                     new AttributeModifier
                     {
-                        Id = "fire_damage",
+                        Id = "damage_types.fire",
                         DisplayName = "Fire Damage",
                         Amount = 10,
                         Kind = ModifierKind.Percent,

@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 pub type OpaqueData = serde_json::Value;
 
 /// Represents a trade order consisting of multiple trade requests.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "PascalCase")]
 pub struct TradeOrder {
     /// The trade requests contained in this order.
     pub requests: Vec<TradeRequest>,
@@ -16,6 +17,7 @@ pub struct TradeOrder {
 
 /// Represents the response to a trade order.
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct TradeResponse {
     /// The original trade order.
     pub order: TradeOrder,
@@ -25,7 +27,8 @@ pub struct TradeResponse {
     pub note: Option<String>,
 }
 /// Represents a single trade request, with the wanted and offered items.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "PascalCase")]
 pub struct TradeRequest {
     /// A unique identifier of a trade request.
     /// This makes it easier to match fulfillments to requests.
@@ -39,7 +42,8 @@ pub struct TradeRequest {
 }
 
 /// A tradable item, such as gold, equipment or consumables.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "PascalCase")]
 pub struct Item {
     /// Identifier for the item in the game.
     pub id: String,
@@ -51,10 +55,13 @@ pub struct Item {
     pub attributes: Vec<AttributeModifier>,
     /// Quantity of the item.
     pub amount: u32,
+    /// Optional opaque data specific to the game.
+    pub data: Option<OpaqueData>,
 }
 
 /// An attribute that is changed by using or equipping the item.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "PascalCase")]
 pub struct AttributeModifier {
     /// Identifier for the Attribute in the game.
     pub id: String,
@@ -64,12 +71,16 @@ pub struct AttributeModifier {
     pub amount: i32,
     /// How the amount should be applied.
     pub kind: ModifierKind,
+    /// Optional opaque data specific to the game.
+    pub data: Option<OpaqueData>,
 }
 
 /// What kind of attribute modifier it is.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "PascalCase")]
 pub enum ModifierKind {
     /// Flat increase.
+    #[default]
     Flat,
     /// Percent increase.
     Percent,

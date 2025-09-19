@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
+
 
 namespace Gxt.Advisory
 {
+    using Newtonsoft.Json.Converters;
     using System.Collections.Generic;
 
 
@@ -71,6 +69,11 @@ namespace Gxt.Advisory
         /// The items offered for fulfilling the trade.
         /// </summary>
         required public List<Item> Offered { get; set; } = new();
+
+        /// <summary>
+        /// Optional opaque data specific to the game.
+        /// </summary>
+        public System.Text.Json.Nodes.JsonNode? Data { get; set; }
     }
 
     /// <summary>
@@ -91,7 +94,7 @@ namespace Gxt.Advisory
         /// <summary>
         /// Description of the item.
         /// </summary>
-        public string? Description { get; set; };
+        public string? Description { get; set; }
 
         /// <summary>
         /// The attributes of the item.
@@ -102,6 +105,11 @@ namespace Gxt.Advisory
         /// Quantity of the item.
         /// </summary>
         required public uint Amount { get; set; }
+
+        /// <summary>
+        /// Optional opaque data specific to the game.
+        /// </summary>
+        public System.Text.Json.Nodes.JsonNode? Data { get; set; }
     }
 
     /// <summary>
@@ -128,11 +136,17 @@ namespace Gxt.Advisory
         /// How the amount should be applied.
         /// </summary>
         required public ModifierKind Kind { get; set; }
+
+        /// <summary>
+        /// Optional opaque data specific to the game.
+        /// </summary>
+        public System.Text.Json.Nodes.JsonNode? Data { get; set; }
     }
 
     /// <summary>
     /// What kind of attribute modifier it is.
     /// </summary>
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum ModifierKind
     {
         /// <summary>
