@@ -78,7 +78,7 @@ pub mod advisory;
 
 const PREFIX: &str = "gx";
 const SIGNATURE_DOMAIN: &[u8] = b"GXT";
-const VERSION: u8 = 3;
+const VERSION: u8 = 4;
 
 type Bytes32 = [u8; 32];
 type Bytes64 = [u8; 64];

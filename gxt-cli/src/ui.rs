@@ -21,8 +21,8 @@ fn hide_console() {
     }
 }
 
-impl From<gxt::Envelope<serde_json::Value>> for UiEnvelope {
-    fn from(value: gxt::Envelope<serde_json::Value>) -> Self {
+impl From<gxt::Envelope<gxt::JsonValue>> for UiEnvelope {
+    fn from(value: gxt::Envelope<gxt::JsonValue>) -> Self {
         let gxt::Envelope {
             version,
             verification_key,
@@ -39,7 +39,7 @@ impl From<gxt::Envelope<serde_json::Value>> for UiEnvelope {
             id: id.into(),
             kind: kind.to_shared_string(),
             parent: parent.unwrap_or_default().into(),
-            payload: serde_json::to_string_pretty(&payload).unwrap().into(),
+            payload: gxt::to_json_pretty(&payload).unwrap().into(),
             signature: signature.into(),
             verification_key: verification_key.into(),
         }
@@ -66,9 +66,9 @@ pub fn run(path: Option<PathBuf>, key: Option<PathBuf>) -> anyhow::Result<()> {
             signature,
         } = if let Some(key) = key {
             let key = std::fs::read_to_string(key)?;
-            gxt::decrypt_message::<serde_json::Value>(&text, &key)?
+            gxt::decrypt_message::<gxt::JsonValue>(&text, &key)?
         } else {
-            let envelope = gxt::verify_message::<serde_json::Value>(&text)?;
+            let envelope = gxt::verify_message::<gxt::JsonValue>(&text)?;
             ui.set_can_decrypt(envelope.kind == PayloadKind::Msg);
             envelope
         };
@@ -80,7 +80,7 @@ pub fn run(path: Option<PathBuf>, key: Option<PathBuf>) -> anyhow::Result<()> {
             id: id.into(),
             kind: kind.to_shared_string(),
             parent: parent.unwrap_or_default().into(),
-            payload: serde_json::to_string_pretty(&payload)?.into(),
+            payload: gxt::to_json_pretty(&payload)?.into(),
             signature: signature.into(),
             verification_key: verification_key.into(),
         };
@@ -95,7 +95,7 @@ pub fn run(path: Option<PathBuf>, key: Option<PathBuf>) -> anyhow::Result<()> {
                 let ui = ui_handle.unwrap();
 
                 let text = std::fs::read_to_string(file).unwrap();
-                let envelope = gxt::verify_message::<serde_json::Value>(&text).unwrap();
+                let envelope = gxt::verify_message::<gxt::JsonValue>(&text).unwrap();
                 ui.set_token_text(text.into());
                 ui.set_can_decrypt(envelope.kind == PayloadKind::Msg);
                 ui.set_envelope(envelope.into());
@@ -111,7 +111,7 @@ pub fn run(path: Option<PathBuf>, key: Option<PathBuf>) -> anyhow::Result<()> {
 
                 let key = std::fs::read_to_string(file).unwrap();
                 let envelope =
-                    gxt::decrypt_message::<serde_json::Value>(&ui.get_token_text(), &key).unwrap();
+                    gxt::decrypt_message::<gxt::JsonValue>(&ui.get_token_text(), &key).unwrap();
                 ui.set_envelope(envelope.into());
                 ui.set_can_decrypt(false);
             }
