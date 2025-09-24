@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <RootNamespace>Gxt</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -16,10 +15,10 @@
     <PackageProjectUrl></PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/game-exchange-token/gxt</RepositoryUrl>
-    <FileVersion>4.0.2</FileVersion>
-    <Version>4.0.2</Version>
+    <FileVersion>4.2.0</FileVersion>
+    <Version>4.2.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <AssemblyVersion>4.0.2</AssemblyVersion>
+    <AssemblyVersion>4.2.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

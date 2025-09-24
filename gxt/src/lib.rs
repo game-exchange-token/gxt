@@ -271,6 +271,7 @@ pub fn make_id_card<M: Serialize + DeserializeOwned>(
 /// # Errors
 /// - returns a corresponding [`GxtError`], depending on what went wrong.
 pub fn verify_message<P: Serialize + DeserializeOwned>(msg: &str) -> Result<Envelope<P>, GxtError> {
+    let msg = msg.trim();
     let (kind, msg) = get_kind(msg)?;
     let raw = decode_message(msg)?;
     let envelope_cbor: CborValue = serde_cbor::from_slice(&raw)?;
