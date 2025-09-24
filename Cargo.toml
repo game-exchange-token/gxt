@@ -21,7 +21,7 @@ repository = "https://github.com/game-exchange-token/gxt"
 documentation = "https://docs.rs/gxt/latest/gxt/"
 
 [workspace.dependencies]
-gxt = { version = "4.0.0", path = "gxt" }
+gxt = { version = "4", path = "gxt" }
 hex = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_cbor = "0.11"
